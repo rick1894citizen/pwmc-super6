@@ -1,0 +1,1757 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no" />
+<title>Prem Predictor 26/27</title>
+
+<!-- ── PWA / standalone ─────────────────────────────────────────────── -->
+<link rel="manifest" href="./manifest.json" />
+<meta name="theme-color" content="#240028" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="Prem Predictor" />
+<link rel="apple-touch-icon" href="./icon-180.png" />
+<link rel="icon" href="./icon-192.png" />
+
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        colors: {
+          pl:     { purple: '#38003c', deep: '#240028', ink: '#1a001d', line: '#4a1050' },
+          neon:   { DEFAULT: '#00ff87', dim: '#00c96a' },
+          cyan:   { DEFAULT: '#04f5ff' },
+          gold:   '#ffd24a',
+          silver: '#cfd6e6',
+          bronze: '#e08c4a',
+        },
+        fontFamily: { sans: ['Inter', 'system-ui', '-apple-system', 'Segoe UI', 'Roboto', 'sans-serif'] },
+      },
+    },
+  };
+</script>
+
+<style>
+  :root { color-scheme: dark; }
+  html, body, #root { height: 100%; }
+  body {
+    margin: 0;
+    background: #240028;
+    background-image:
+      radial-gradient(1100px 520px at 50% -10%, rgba(0,255,135,.13), transparent 62%),
+      radial-gradient(900px 460px at 100% 0%, rgba(4,245,255,.09), transparent 60%);
+    background-attachment: fixed;
+    color: #fff;
+    font-family: Inter, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -webkit-tap-highlight-color: transparent;
+    overflow-x: hidden;             /* kill horizontal scroll for good */
+    overscroll-behavior-y: none;    /* no rubber-band white flash on iOS */
+  }
+  * { -webkit-touch-callout: none; box-sizing: border-box; }
+  input, textarea, select { font-size: 16px; }  /* stops iOS zoom-on-focus */
+
+  .safe-t { padding-top: env(safe-area-inset-top, 0px); }
+  .safe-b { padding-bottom: env(safe-area-inset-bottom, 0px); }
+
+  .no-scrollbar::-webkit-scrollbar { display: none; }
+  .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+  .glass { background: rgba(255,255,255,.055); border: 1px solid rgba(255,255,255,.09); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); }
+  .glass-strong { background: rgba(36,0,40,.86); backdrop-filter: blur(20px) saturate(160%); -webkit-backdrop-filter: blur(20px) saturate(160%); }
+
+  /* ── motion (CSS in place of Framer Motion, see README) ───────────── */
+  @keyframes riseIn  { from { opacity:0; transform: translate3d(0,14px,0) } to { opacity:1; transform:none } }
+  @keyframes fadeIn  { from { opacity:0 } to { opacity:1 } }
+  @keyframes sheetUp { from { transform: translate3d(0,100%,0) } to { transform:none } }
+  @keyframes pulseRing { 0%,100% { opacity:.55 } 50% { opacity:1 } }
+  @keyframes shimmer { 100% { background-position: 200% 0 } }
+  .rise    { animation: riseIn .34s cubic-bezier(.22,1,.36,1) both; }
+  .fade    { animation: fadeIn .22s ease both; }
+  .sheet-up{ animation: sheetUp .3s cubic-bezier(.22,1,.36,1) both; }
+  .skel {
+    background: linear-gradient(90deg, rgba(255,255,255,.05) 25%, rgba(255,255,255,.12) 37%, rgba(255,255,255,.05) 63%);
+    background-size: 200% 100%; animation: shimmer 1.3s linear infinite; border-radius: 10px;
+  }
+  @media (prefers-reduced-motion: reduce) { .rise,.fade,.sheet-up,.skel { animation: none !important } }
+
+  .press { transition: transform .12s ease, background-color .15s ease; }
+  .press:active { transform: scale(.975); }
+  .tnum { font-variant-numeric: tabular-nums; }
+</style>
+
+<script crossorigin src="https://unpkg.com/react@18.3.1/umd/react.production.min.js"></script>
+<script crossorigin src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone@7.25.6/babel.min.js"></script>
+</head>
+
+<body>
+  <div id="root">
+    <div style="display:flex;align-items:center;justify-content:center;height:100vh;flex-direction:column;gap:16px">
+      <div style="width:54px;height:54px;border-radius:50%;border:4px solid rgba(255,255,255,.12);border-top-color:#00ff87;animation:spin 1s linear infinite"></div>
+      <div style="font-weight:700;letter-spacing:.12em;font-size:11px;color:rgba(255,255,255,.45)">PREM PREDICTOR 26/27</div>
+    </div>
+  </div>
+  <style>@keyframes spin { to { transform: rotate(360deg) } }</style>
+
+<script type="text/babel" data-presets="react">
+const { useState, useEffect, useMemo, useRef, useCallback } = React;
+
+/* ═══════════════════════════════════════════════════════════════════════
+   1.  CONFIG  —  THIS IS THE ONLY BLOCK YOU NEED TO EDIT
+   ═══════════════════════════════════════════════════════════════════════
+   • API_URL     paste the /exec URL from your Apps Script deployment
+   • USE_MOCK    flip to false once API_URL is set
+   • TABS        must match your Google Sheet tab names exactly
+   • COLUMNS     each field lists accepted header names (case/space-insensitive).
+                 Add your real header as another string in the array — the first
+                 one that matches wins. Open the ⚙ Diagnostics screen in the app
+                 to see the exact headers it found and which ones failed to map.
+   ═══════════════════════════════════════════════════════════════════════ */
+const CONFIG = {
+  API_URL: 'https://script.google.com/macros/s/AKfycbyQ_ajk4nx8cVf-MwXqwrCftEABMKrJlotu_j7TCzh0qdJ-uFMZb8Buuii5aBQf4pGF/exec',
+  USE_MOCK: false,        // live Google Sheet
+  CACHE_MINUTES: 3,       // client-side cache so nobody hammers the sheet
+  CURRENT_GAMEWEEK: null, // null = auto-detect from Live Results; or force e.g. 12
+
+  /* Tab names are resolved inside Code.gs (TAB_ALIASES), not here.
+     Column headers are matched below: exact first, then "starts with", and
+     always ignoring case, spaces, hyphens, brackets and currency symbols —
+     so '1st Payment' matches '1st Payment (£20 - Due Aug 2026)'. */
+  COLUMNS: {
+    leaderboard: {
+      player:    ['Player Name', 'Player', 'Name'],
+      weekly:    ['Weekly Points Total', 'Weekly Points', 'Weekly'],
+      outrights: ['Outright Bonus', 'Outright Bonus Points', 'Total Bonus Points', 'Outright Points', 'Outrights'],
+      motm:      ['Manager of the Month', 'MOTM'],
+      total:     ['Total Overall Points', 'Overall Points', 'Total Points'],
+    },
+    predictions: {                 // Code.gs reshapes the wide grid into these
+      gw:        ['Matchweek', 'Gameweek', 'GW'],
+      fixture:   ['Fixture Number', 'Fixture No', 'Fixture'],
+      player:    ['Player Name', 'Player', 'Name'],
+      predHome:  ['Home Score', 'Predicted Home Score', 'Pred Home'],
+      predAway:  ['Away Score', 'Predicted Away Score', 'Pred Away'],
+      predScorer:['1st Goalscorer', 'Predicted 1st Goalscorer', 'First Goalscorer', 'Goalscorer'],
+    },
+    results: {
+      gw:          ['Matchweek', 'Gameweek', 'GW'],
+      matchNo:     ['Fixture Number', 'Fixture No', 'Match Number', 'Match'],
+      date:        ['Date', 'Kick Off', 'Kick-off', 'KO'],
+      home:        ['Home Team', 'Home'],
+      away:        ['Away Team', 'Away'],
+      actualHome:  ['Actual Home Score', 'Home Score', 'Home Goals'],
+      actualAway:  ['Actual Away Score', 'Away Score', 'Away Goals'],
+      actualScorer:['Actual 1st Goalscorer', 'Actual First Goalscorer', '1st Goalscorer'],
+      // Column I on Live Results: the actual 1st goalscorer's position, used
+      // to tier goalscorer points. Add your real header here if it isn't
+      // one of these (Diagnostics ⚙ flags it as unmapped otherwise).
+      actualScorerPosition: ['Position Code', 'Position', 'Pos', 'Scorer Position', 'Goalscorer Position'],
+      status:      ['Status', 'Played', 'State'],
+    },
+    outrights: {
+      player:     ['Player Name', 'Player', 'Name'],
+      winner:     ['Premier League Winner', 'PL Winner', 'League Winner', 'Title Winner'],
+      goldenBoot: ['Golden Boot', 'Top Goalscorer', 'Top Scorer'],
+      assists:    ['Most Assists', 'Assists'],
+      goldenGlove:['Golden Glove', 'Clean Sheets'],
+      bottom:     ['Bottom of the League', 'Bottom of League', '20th Place', 'Last Place'],
+      bonus:      ['Total Bonus Points', 'Outright Bonus Points', 'Bonus Points'],
+    },
+    payments: {
+      player:    ['Player Name', 'Player', 'Name'],
+      p1:        ['1st Payment', 'First Payment', 'Payment 1'],
+      p2:        ['2nd Payment', 'Second Payment', 'Payment 2'],
+      totalPaid: ['Total Paid', 'Amount Paid'],
+      status:    ['Payment Status'],
+    },
+    gwPoints: {                    // optional 'Gameweek Points' tab, drives MOTM
+      player: ['Player Name', 'Player', 'Name'],
+      gw:     ['Matchweek', 'Gameweek', 'GW'],
+      points: ['Points', 'Score'],
+    },
+  },
+
+  /* Season boundary, used to give an undated month column the right year:
+     August-December → 2026, January-July → 2027. */
+  SEASON: { startMonth: 8, startYear: 2026 },
+
+  MOTM: {
+    /* Which months carry a Manager of the Month prize. Add a month column of
+       the same name to the Live Leaderboard tab for each one. Leave the array
+       empty to treat every month column as a MOTM month. */
+    months: ['September', 'January', 'April'],
+
+    /* true  → Weekly Points Total should equal the sum of the month columns,
+                and Diagnostics checks it every load (use when you have a
+                column for all ten months of the season).
+       false → the month columns only cover the MOTM months, so they are not
+                expected to add up to the season total and no check runs. */
+    reconcileWithTotal: false,
+  },
+
+  /* Entry fee model — used for the payments summary maths */
+  FEE: { instalment: 20, total: 40, currency: '£' },
+
+  /* League scoring rules (Aug 2026). Match points — outcome, exact score and
+     1st goalscorer — are calculated in-app from Master Predictions and Live
+     Results using these figures. Season totals, Manager of the Month and the
+     five outright bonuses are still read straight from the Google Sheet. */
+  SCORING: {
+    outcome: 5,            // correct Home Win / Draw / Away Win
+    exactBonus: 5,          // on top of `outcome` for an exact scoreline (10 pts total)
+    // Tiered by the actual 1st goalscorer's position code (Live Results,
+    // COLUMNS.results.actualScorerPosition). Anything not listed — blank,
+    // incorrect, or an unrecognised code — scores 0.
+    scorerByPosition: { F: 5, M: 7, D: 10 },
+    outrightBonus: 25,      // each of the 5 outright categories
+  },
+
+  POINTS_LEGEND: [
+    { label: 'Correct outcome (H/D/A)',        value: '5 pts' },
+    { label: 'Exact scoreline',                value: '+5 pts (10 total)' },
+    { label: '1st goalscorer — Forward',       value: '5 pts' },
+    { label: '1st goalscorer — Midfielder',    value: '7 pts' },
+    { label: '1st goalscorer — Defender',      value: '10 pts' },
+    { label: 'Each outright bonus (of 5)',     value: '25 pts' },
+  ],
+};
+
+const OUTRIGHT_CATS = [
+  { key: 'winner',      label: 'Premier League Winner', short: 'PL Winner',   icon: 'trophy',  tone: 'from-gold/25 to-transparent',  ring: 'ring-gold/30' },
+  { key: 'goldenBoot',  label: 'Golden Boot',           short: 'Top Scorer',  icon: 'ball',    tone: 'from-neon/20 to-transparent',  ring: 'ring-neon/30' },
+  { key: 'assists',     label: 'Most Assists',          short: 'Assists',     icon: 'zap',     tone: 'from-cyan/20 to-transparent',  ring: 'ring-cyan/30' },
+  { key: 'goldenGlove', label: 'Golden Glove',          short: 'Clean Sheets',icon: 'shield',  tone: 'from-violet-400/20 to-transparent', ring: 'ring-violet-400/30' },
+  { key: 'bottom',      label: 'Bottom of the League',  short: '20th Place',  icon: 'down',    tone: 'from-rose-400/20 to-transparent',  ring: 'ring-rose-400/30' },
+];
+
+/* ═══════════════════════════════════════════════════════════════════════
+   2.  UTILITIES — header matching, coercion, formatting
+   ═══════════════════════════════════════════════════════════════════════ */
+/** Strips case, spaces, punctuation, brackets and currency symbols, so
+ *  '1st Payment (£20 - Due Aug 2026)' → '1stpayment20dueaug2026'. */
+const norm = (s) => String(s ?? '').toLowerCase().replace(/[\s_\-./()£$,:]+/g, '').trim();
+
+/**
+ * Build { field -> actualHeader } for one tab.
+ * Pass 1 takes exact matches so nothing gets stolen; pass 2 fills the rest
+ * with "header starts with alias", which is what catches the sheet's
+ * decorated headers like 'Total Paid (£)'.
+ */
+function buildFieldMap(headers, spec) {
+  const clean = headers.filter(Boolean);
+  const exact = new Map(clean.map((h) => [norm(h), h]));
+  const map = {}, taken = new Set(), pending = [];
+
+  for (const [field, aliases] of Object.entries(spec)) {
+    const hit = aliases.map(norm).find((a) => exact.has(a) && !taken.has(exact.get(a)));
+    if (hit) { map[field] = exact.get(hit); taken.add(map[field]); }
+    else pending.push([field, aliases]);
+  }
+
+  const missing = [];
+  for (const [field, aliases] of pending) {
+    let found = null;
+    for (const alias of aliases.map(norm)) {
+      if (alias.length < 3) continue;
+      found = clean.find((h) => !taken.has(h) && norm(h).startsWith(alias));
+      if (found) break;
+    }
+    if (found) { map[field] = found; taken.add(found); }
+    else missing.push(field);
+  }
+  return { map, missing };
+}
+
+const num = (v) => {
+  if (typeof v === 'number') return v;
+  const n = parseFloat(String(v ?? '').replace(/[^0-9.\-]/g, ''));
+  return Number.isFinite(n) ? n : 0;
+};
+const txt = (v) => String(v ?? '').trim();
+const truthy = (v) => {
+  const t = norm(v);
+  return ['true', 'yes', 'y', 'paid', '1', 'x', '✓', 'done', 'complete'].includes(t) || num(v) > 0;
+};
+const money = (n) => CONFIG.FEE.currency + Number(n || 0).toLocaleString('en-GB');
+const initials = (name) =>
+  txt(name).split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0]).join('').toUpperCase() || '?';
+
+/** Deterministic pastel hue from a name, for avatar tints. */
+const hueOf = (name) => {
+  let h = 0;
+  for (let i = 0; i < String(name).length; i++) h = (h * 31 + String(name).charCodeAt(i)) % 360;
+  return h;
+};
+
+/* ── Calendar months (Manager of the Month column headers) ────────────── */
+const MONTHS = ['January','February','March','April','May','June',
+                'July','August','September','October','November','December'];
+
+/**
+ * Finds the monthly columns on the Live Leaderboard tab.
+ * A header counts as a month only if the whole thing is a month name or its
+ * 3-letter abbreviation, optionally with a year: 'Aug', 'August', 'Aug 26',
+ * "Sep '26", 'October 2026'. 'Manager of the Month' and 'Rank' are not months.
+ */
+const MONTH_ABBR = { jan:1, feb:2, mar:3, apr:4, may:5, jun:6, jul:7, aug:8, sep:9, oct:10, nov:11, dec:12 };
+
+function detectMonthColumns(headers) {
+  const found = [];
+  for (const h of headers || []) {
+    if (!h) continue;
+    const m = String(h).trim().match(/^([A-Za-z]{3,9})\.?[\s-]*'?(\d{2,4})?$/);
+    if (!m) continue;
+
+    const word = m[1].toLowerCase();
+    const abbr = word.slice(0, 3);
+    const idx = MONTH_ABBR[abbr];
+    if (!idx) continue;
+    if (word !== abbr && word !== MONTHS[idx - 1].toLowerCase()) continue;   // 'Marcus' is not March
+
+    let year = m[2] ? +m[2] : null;
+    if (year !== null && year < 100) year += 2000;
+    if (year === null) {
+      year = idx >= CONFIG.SEASON.startMonth ? CONFIG.SEASON.startYear : CONFIG.SEASON.startYear + 1;
+    }
+    found.push({
+      header: h, month: idx, year,
+      key: year + '-' + String(idx).padStart(2, '0'),
+      label: MONTHS[idx - 1],
+      long: MONTHS[idx - 1] + ' ' + year,
+    });
+  }
+  return found.sort((a, b) => (a.key < b.key ? -1 : 1));
+}
+
+/** Narrows the detected month columns to the ones carrying a MOTM prize. */
+function motmMonths(monthCols) {
+  const wanted = (CONFIG.MOTM && CONFIG.MOTM.months) || [];
+  if (!wanted.length) return monthCols || [];
+  const set = new Set(wanted.map((w) => norm(w).slice(0, 3)));
+  return (monthCols || []).filter((m) => set.has(norm(m.label).slice(0, 3)));
+}
+
+/* ── Scoring engine ─────────────────────────────────────────────────────
+   League rules (Aug 2026), from CONFIG.SCORING:
+     • Correct outcome (Home Win / Draw / Away Win) → `outcome` pts
+     • Exact scoreline                              → + `exactBonus` pts
+     • Correct 1st goalscorer                        → tiered by the actual
+       scorer's position code (Live Results, Column I). Blank, incorrect or
+       an unrecognised code scores 0.
+   Season totals, Manager of the Month and the outright bonuses are still the
+   sheet's own numbers — only these per-match figures are calculated here. */
+function scorerPointsFor(predScorer, fx) {
+  if (!predScorer || !fx.actualScorer) return 0;
+  if (norm(predScorer) !== norm(fx.actualScorer)) return 0;
+  const code = norm(fx.actualScorerPosition).charAt(0).toUpperCase();
+  return CONFIG.SCORING.scorerByPosition[code] || 0;
+}
+
+/** Points for one player's prediction against one fixture's actual result. */
+function matchPoints(pred, fx) {
+  const played = !!fx && fx.actualHome !== null;
+  if (!pred || pred.predHome === null || pred.predAway === null || !played) {
+    return { outcome: 0, exact: 0, scorer: 0, total: 0, played, exactHit: false, outcomeHit: false };
+  }
+  const exactHit = pred.predHome === fx.actualHome && pred.predAway === fx.actualAway;
+  const sign = (a, b) => (a === b ? 0 : a > b ? 1 : -1);
+  const outcomeHit = sign(pred.predHome, pred.predAway) === sign(fx.actualHome, fx.actualAway);
+  const outcome = outcomeHit ? CONFIG.SCORING.outcome : 0;
+  const exact = exactHit ? CONFIG.SCORING.exactBonus : 0;
+  const scorer = scorerPointsFor(pred.predScorer, fx);
+  return { outcome, exact, scorer, total: outcome + exact + scorer, played, exactHit, outcomeHit };
+}
+
+/** Every leaderboard player's points for one matchweek, calculated live from
+ *  Master Predictions + Live Results using the rules above — this is what
+ *  drives the Leaderboard's "Gameweek" filter. */
+function weeklyPointsTable(data, gw) {
+  const byMatchNo = new Map(data.results.filter((r) => r.gw === gw).map((r) => [r.matchNo, r]));
+  const totals = new Map(data.leaderboard.map((r) => [r.player, 0]));
+  // Master Predictions and Live Leaderboard are two different sheets, so a
+  // stray casing difference ("Scott s" vs "Scott S") is common — resolve to
+  // the Leaderboard's own spelling rather than splitting one player in two.
+  const canonicalByNorm = new Map(data.leaderboard.map((r) => [norm(r.player), r.player]));
+  for (const p of data.predictions) {
+    if (p.gw !== gw) continue;
+    const fx = byMatchNo.get(p.fixture);
+    if (!fx) continue;
+    const player = canonicalByNorm.get(norm(p.player)) || p.player;
+    if (!totals.has(player)) totals.set(player, 0);
+    totals.set(player, totals.get(player) + matchPoints(p, fx).total);
+  }
+  return [...totals.entries()]
+    .map(([player, points]) => ({ player, points }))
+    .sort((a, b) => b.points - a.points || a.player.localeCompare(b.player));
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   3.  MOCK DATA  (USE_MOCK: true)
+   ─────────────────────────────────────────────────────────────────────
+   Illustrative sample only. Team names are real English clubs used purely
+   as filler; these are NOT the actual 2026/27 fixture list. Player names,
+   scorers and every points value below are fabricated.
+   ═══════════════════════════════════════════════════════════════════════ */
+const MOCK_TEAMS = ['Arsenal','Aston Villa','Brentford','Brighton','Chelsea','Crystal Palace','Everton','Fulham','Liverpool','Man City','Man United','Newcastle','Nottm Forest','Tottenham','West Ham','Wolves'];
+const MOCK_SCORERS = ['E. Haaland','B. Saka','M. Salah','C. Palmer','A. Isak','O. Watkins','S. Son','B. Fernandes','J. Bowen','D. Solanke','No Goalscorer'];
+// Position code per mock scorer, same index — feeds the tiered goalscorer
+// points (F/M/D). 'No Goalscorer' has no position.
+const MOCK_SCORER_POS = ['F','M','M','M','F','F','M','M','M','F',''];
+const MOCK_NAMES = ['Rick F','Gaz T','Wayne T','Jon F','Scott S','Tony W','Shaun F','Ste B','Chris B','Brandon G','Mason G','Lewis A','Nick W','Tony M','Danny H','Daryl W','Dave','Josh J','Josh T','Paul B','Ryan M','Willy','Nathan M','Reo D'];
+
+function mockSheet() {
+  const R = { s: 20262027 };
+  const rnd = () => { R.s = (R.s * 1664525 + 1013904223) % 4294967296; return R.s / 4294967296; };
+  const pick = (arr) => arr[Math.floor(rnd() * arr.length)];
+
+  const CURRENT_GW = 5;
+
+  const results = [];
+  for (let gw = 1; gw <= 38; gw++) {
+    const shuffled = [...MOCK_TEAMS].sort(() => rnd() - 0.5);
+    for (let m = 0; m < 6; m++) {
+      const played = gw < CURRENT_GW;
+      const d = new Date(2026, 7, 15 + (gw - 1) * 7 + (m % 2));
+      const scorerIdx = Math.floor(rnd() * MOCK_SCORERS.length);
+      results.push({
+        gw, matchNo: m + 1,
+        date: d.toISOString().slice(0, 10),
+        home: shuffled[m * 2], away: shuffled[m * 2 + 1],
+        actualHome: played ? Math.floor(rnd() * 4) : null,
+        actualAway: played ? Math.floor(rnd() * 3) : null,
+        actualScorer: played ? MOCK_SCORERS[scorerIdx] : '',
+        actualScorerPosition: played ? MOCK_SCORER_POS[scorerIdx] : '',
+        status: played ? 'FT' : 'Scheduled',
+      });
+    }
+  }
+
+  const predictions = [];
+  for (let gw = 1; gw <= CURRENT_GW; gw++) {
+    for (const p of MOCK_NAMES) {
+      for (let f = 1; f <= 6; f++) {
+        predictions.push({
+          gw, fixture: f, player: p,
+          predHome: Math.floor(rnd() * 4),
+          predAway: Math.floor(rnd() * 3),
+          predScorer: pick(MOCK_SCORERS),
+        });
+      }
+    }
+  }
+
+  const outrights = MOCK_NAMES.map((p) => ({
+    player: p,
+    winner: pick(MOCK_TEAMS), goldenBoot: pick(MOCK_SCORERS.slice(0, 10)),
+    assists: pick(MOCK_SCORERS.slice(0, 10)), goldenGlove: pick(MOCK_TEAMS),
+    bottom: pick(MOCK_TEAMS), bonus: 0,
+  }));
+
+  /* The three prize months, as they would sit on the Live Leaderboard tab.
+     Sample season is early on, so only September has anything in it. */
+  const monthCols = [
+    { header: 'Sep', month: 9, year: 2026, key: '2026-09', label: 'September', long: 'September 2026' },
+    { header: 'Jan', month: 1, year: 2027, key: '2027-01', label: 'January',   long: 'January 2027' },
+    { header: 'Apr', month: 4, year: 2027, key: '2027-04', label: 'April',     long: 'April 2027' },
+  ];
+
+  const gwPoints = [];
+  const seasonTotal = new Map(MOCK_NAMES.map((p) => [p, 0]));
+  const sepTotal = new Map(MOCK_NAMES.map((p) => [p, 0]));
+  for (let gw = 1; gw < CURRENT_GW; gw++) {
+    for (const p of MOCK_NAMES) {
+      const pts = 5 * Math.floor(rnd() * 4);            // 0, 5, 10 or 15
+      gwPoints.push({ player: p, gw, points: pts });
+      seasonTotal.set(p, seasonTotal.get(p) + pts);
+      if (gw >= 3) sepTotal.set(p, sepTotal.get(p) + pts);   // GW3+ fall in September
+    }
+  }
+
+  const leaderboard = MOCK_NAMES.map((p, i) => {
+    const monthly = { '2026-09': sepTotal.get(p), '2027-01': 0, '2027-04': 0 };
+    const weekly = seasonTotal.get(p);
+    const outs = [0, 0, 25, 25, 50][Math.floor(rnd() * 5)];
+    return { player: p, weekly, monthly,
+             monthSum: Object.values(monthly).reduce((a, b) => a + b, 0),
+             outrights: outs, motm: '', total: weekly + outs };
+  });
+
+  const payments = MOCK_NAMES.map((p, i) => {
+    const state = i < 2 ? 2 : i < 6 || i === 13 ? 1 : 0;
+    return {
+      player: p,
+      p1: state >= 1 ? CONFIG.FEE.instalment : 0,
+      p2: state >= 2 ? CONFIG.FEE.instalment : 0,
+      totalPaid: state * CONFIG.FEE.instalment,
+      status: state === 2 ? 'FULLY PAID' : state === 1 ? 'PARTIALLY PAID' : 'UNPAID',
+    };
+  });
+
+  return {
+    meta: { generatedAt: new Date().toISOString(), mock: true },
+    leaderboard, predictions, results, outrights, payments, gwPoints, monthCols,
+    outrightAnswers: {},
+    warnings: [],
+    diagnostics: ['leaderboard', 'predictions', 'results', 'outrights', 'payments', 'gwPoints'].map((k) => ({
+      key: k, tab: '(mock)', headerRow: null, rowCount: 0,
+      headers: ['sample data — connect the sheet to see real headers'], missing: [],
+    })),
+  };
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   4.  DATA LAYER  — fetch from Apps Script, normalise, cache
+   ═══════════════════════════════════════════════════════════════════════ */
+const CACHE_KEY = 'pp2627:cache:v1';
+
+function readCache() {
+  try {
+    const raw = localStorage.getItem(CACHE_KEY);
+    if (!raw) return null;
+    const { at, data } = JSON.parse(raw);
+    if (Date.now() - at > CONFIG.CACHE_MINUTES * 60000) return { data, stale: true };
+    return { data, stale: false };
+  } catch { return null; }
+}
+function writeCache(data) {
+  try { localStorage.setItem(CACHE_KEY, JSON.stringify({ at: Date.now(), data })); } catch {}
+}
+
+/** Rows the sheet uses for totals/labels rather than players. */
+const isNonPlayerRow = (name) => /^(total|grand total|sum|players)\b/i.test(txt(name));
+
+/** Turn the raw payload from Apps Script into the app's normalised shape. */
+function normalise(raw) {
+  const tabs = raw.tabs || {};
+  const serverDiag = raw.diagnostics || {};
+  const diagnostics = [];
+
+  const take = (key, spec, rowFn) => {
+    const rows = tabs[key] || [];
+    const sd = serverDiag[key] || {};
+    if (!rows.length) {
+      diagnostics.push({ key, tab: sd.tabName || '(not found)', headerRow: sd.headerRow,
+                         headers: sd.headers || [], rowCount: 0, missing: Object.keys(spec) });
+      return [];
+    }
+    const headers = Object.keys(rows[0]);
+    const { map, missing } = buildFieldMap(headers, spec);
+    diagnostics.push({ key, tab: sd.tabName || key, headerRow: sd.headerRow,
+                       headers, rowCount: rows.length, missing, map });
+    const g = (r, f) => (map[f] === undefined ? undefined : r[map[f]]);
+    return rows.map((r) => rowFn(r, g)).filter(Boolean);
+  };
+
+  const outrights = take('outrights', CONFIG.COLUMNS.outrights, (r, g) => {
+    const player = txt(g(r, 'player'));
+    if (!player || isNonPlayerRow(player)) return null;
+    const o = { player, bonus: num(g(r, 'bonus')) };
+    OUTRIGHT_CATS.forEach((c) => { o[c.key] = txt(g(r, c.key)); });
+    return o;
+  });
+
+  /* The Live Leaderboard tab has no outrights column, so fall back to
+     Total Bonus Points on the Tournament Predictions tab. */
+  const bonusByPlayer = new Map(outrights.map((o) => [norm(o.player), o.bonus]));
+
+  /* Monthly columns (Aug, Sep, … May) on the Live Leaderboard tab drive
+     Manager of the Month. Absent, the app just hides that section. */
+  const lbRows = tabs.leaderboard || [];
+  const monthCols = detectMonthColumns(lbRows.length ? Object.keys(lbRows[0]) : []);
+
+  const leaderboard = take('leaderboard', CONFIG.COLUMNS.leaderboard, (r, g) => {
+    const player = txt(g(r, 'player'));
+    if (!player || isNonPlayerRow(player)) return null;
+
+    const monthly = {};
+    let monthSum = 0;
+    for (const mc of monthCols) {
+      const v = num(r[mc.header]);
+      monthly[mc.key] = v;
+      monthSum += v;
+    }
+
+    /* Only fall back to the month sum when those columns cover the whole
+       season. With just the MOTM months they would understate the total. */
+    const weeklyRaw = g(r, 'weekly');
+    const canFallBack = monthCols.length && CONFIG.MOTM && CONFIG.MOTM.reconcileWithTotal;
+    const weekly = (weeklyRaw === undefined || weeklyRaw === '') && canFallBack
+      ? monthSum : num(weeklyRaw);
+
+    const outsRaw = g(r, 'outrights');
+    const outs = outsRaw === undefined || outsRaw === ''
+      ? (bonusByPlayer.get(norm(player)) || 0)
+      : num(outsRaw);
+    const totalRaw = g(r, 'total');
+    return { player, weekly, monthly, monthSum, outrights: outs, motm: txt(g(r, 'motm')),
+             total: totalRaw === undefined || totalRaw === '' ? weekly + outs : num(totalRaw) };
+  });
+
+  /* Master Predictions and Live Leaderboard are separate sheets, so a stray
+     casing difference ("Scott s" vs "Scott S") is common. Resolve every
+     prediction's player to the Leaderboard's own spelling so the same
+     person never splits into two rows downstream. */
+  const playerByNorm = new Map(leaderboard.map((r) => [norm(r.player), r.player]));
+
+  const predictions = take('predictions', CONFIG.COLUMNS.predictions, (r, g) => {
+    const rawPlayer = txt(g(r, 'player'));
+    if (!rawPlayer || isNonPlayerRow(rawPlayer)) return null;
+    const player = playerByNorm.get(norm(rawPlayer)) || rawPlayer;
+    const h = g(r, 'predHome'), a = g(r, 'predAway');
+    return { gw: num(g(r, 'gw')), fixture: num(g(r, 'fixture')), player,
+             predHome: h === '' || h === undefined ? null : num(h),
+             predAway: a === '' || a === undefined ? null : num(a),
+             predScorer: txt(g(r, 'predScorer')) };
+  });
+
+  /* Keep fixture rows even before team names are filled in — the sheet is
+     pre-seeded with 228 rows of Matchweek + Fixture Number. */
+  const results = take('results', CONFIG.COLUMNS.results, (r, g) => {
+    const gw = num(g(r, 'gw'));
+    if (!gw) return null;
+    const ah = g(r, 'actualHome'), aa = g(r, 'actualAway');
+    const has = ah !== '' && ah !== undefined && ah !== null;
+    return { gw, matchNo: num(g(r, 'matchNo')), date: txt(g(r, 'date')),
+             home: txt(g(r, 'home')), away: txt(g(r, 'away')),
+             actualHome: has ? num(ah) : null, actualAway: has ? num(aa) : null,
+             actualScorer: txt(g(r, 'actualScorer')),
+             // Position code of the actual 1st goalscorer (Live Results, Column
+             // I) — feeds the tiered goalscorer points in matchPoints().
+             actualScorerPosition: txt(g(r, 'actualScorerPosition')),
+             status: txt(g(r, 'status')) || (has ? 'FT' : 'Scheduled') };
+  });
+
+  const payments = take('payments', CONFIG.COLUMNS.payments, (r, g) => {
+    const player = txt(g(r, 'player'));
+    if (!player || isNonPlayerRow(player)) return null;
+    const p1 = truthy(g(r, 'p1')) ? (num(g(r, 'p1')) || CONFIG.FEE.instalment) : 0;
+    const p2 = truthy(g(r, 'p2')) ? (num(g(r, 'p2')) || CONFIG.FEE.instalment) : 0;
+    const tp = g(r, 'totalPaid');
+    return { player, p1, p2,
+             totalPaid: tp === undefined || tp === '' ? p1 + p2 : num(tp),
+             status: txt(g(r, 'status')) };
+  });
+
+  const gwPoints = take('gwPoints', CONFIG.COLUMNS.gwPoints, (r, g) => {
+    const player = txt(g(r, 'player'));
+    const gw = num(g(r, 'gw'));
+    if (!player || isNonPlayerRow(player) || !gw) return null;
+    return { player, gw, points: num(g(r, 'points')) };
+  });
+
+  return {
+    meta: { generatedAt: raw.generatedAt || new Date().toISOString(), mock: false },
+    leaderboard, predictions, results, outrights, payments, gwPoints, monthCols,
+    outrightAnswers: raw.outrightAnswers || {},
+    warnings: raw.warnings || [],
+    diagnostics,
+  };
+}
+
+async function loadData() {
+  if (CONFIG.USE_MOCK || !CONFIG.API_URL) return mockSheet();
+  const res = await fetch(CONFIG.API_URL + (CONFIG.API_URL.includes('?') ? '&' : '?') + 't=' + Date.now(), {
+    method: 'GET', redirect: 'follow',
+  });
+  if (!res.ok) throw new Error('Sheet request failed (HTTP ' + res.status + ')');
+  const raw = await res.json();
+  if (raw && raw.error) throw new Error(raw.error);
+  return normalise(raw);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   5.  ICONS  (Lucide path data, inlined so the app has no icon dependency)
+   ═══════════════════════════════════════════════════════════════════════ */
+const P = {
+  trophy: ['M6 9H4.5a2.5 2.5 0 0 1 0-5H6','M18 9h1.5a2.5 2.5 0 0 0 0-5H18','M4 22h16','M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22','M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22','M18 2H6v7a6 6 0 0 0 12 0V2Z'],
+  ball:   ['M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20Z','m12 7 4.76 3.46-1.82 5.59H9.06l-1.82-5.59L12 7Z','m12 2 0 5','m2.6 8.6 4.6 1.9','m21.4 8.6-4.6 1.9','m5.6 19.4 3.5-3.4','m18.4 19.4-3.5-3.4'],
+  target: ['M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20Z','M12 18a6 6 0 1 0 0-12 6 6 0 0 0 0 12Z','M12 14a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z'],
+  card:   ['M2 5h20v14H2z','M2 10h20'],
+  search: ['M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16Z','m21 21-4.3-4.3'],
+  chevD:  ['m6 9 6 6 6-6'],
+  chevR:  ['m9 18 6-6-6-6'],
+  x:      ['M18 6 6 18','m6 6 12 12'],
+  users:  ['M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2','M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z','M22 21v-2a4 4 0 0 0-3-3.87','M16 3.13a4 4 0 0 1 0 7.75'],
+  flame:  ['M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5Z'],
+  zap:    ['M4 14h7l-1 8 10-12h-7l1-8-10 12Z'],
+  shield: ['M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1Z'],
+  down:   ['M12 5v14','m19 12-7 7-7-7'],
+  refresh:['M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8','M21 3v5h-5','M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16','M8 16H3v5'],
+  gear:   ['M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2Z','M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z'],
+  alert:  ['M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20Z','M12 8v4','M12 16h.01'],
+  check:  ['M20 6 9 17l-5-5'],
+  cal:    ['M8 2v4','M16 2v4','M3 10h18','M3 6a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z'],
+  crown:  ['M11.562 3.266a.5.5 0 0 1 .876 0L15.39 8.87a1 1 0 0 0 1.516.294l3.4-2.842a.5.5 0 0 1 .806.53l-2.19 8.2A2 2 0 0 1 17 16.5H7a2 2 0 0 1-1.92-1.448l-2.19-8.2a.5.5 0 0 1 .806-.53l3.4 2.842A1 1 0 0 0 8.61 8.87z','M5 21h14'],
+  trend:  ['M16 7h6v6','m22 7-8.5 8.5-5-5L2 17'],
+};
+function Icon({ name, size = 20, className = '', strokeWidth = 2, fill = 'none' }) {
+  const d = P[name] || P.alert;
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill={fill} stroke="currentColor"
+         strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round"
+         className={className} aria-hidden="true">
+      {d.map((p, i) => <path key={i} d={p} />)}
+    </svg>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   6.  SHARED UI PRIMITIVES
+   ═══════════════════════════════════════════════════════════════════════ */
+function Card({ className = '', children, style }) {
+  return <div style={style} className={'glass rounded-2xl ' + className}>{children}</div>;
+}
+
+function Avatar({ name, size = 38, rank }) {
+  const h = hueOf(name);
+  const medal = rank === 1 ? '#ffd24a' : rank === 2 ? '#cfd6e6' : rank === 3 ? '#e08c4a' : null;
+  return (
+    <div className="relative shrink-0" style={{ width: size, height: size }}>
+      <div className="w-full h-full rounded-full grid place-items-center font-extrabold text-[13px] tracking-tight"
+           style={{ background: `linear-gradient(140deg, hsl(${h} 70% 30%), hsl(${(h + 45) % 360} 70% 18%))`,
+                    boxShadow: medal ? `0 0 0 2px ${medal}` : '0 0 0 1px rgba(255,255,255,.12)' }}>
+        {initials(name)}
+      </div>
+    </div>
+  );
+}
+
+function Pill({ children, tone = 'slate', className = '' }) {
+  const tones = {
+    slate:  'bg-white/8 text-white/70 ring-white/12',
+    green:  'bg-neon/15 text-neon ring-neon/30',
+    orange: 'bg-amber-400/15 text-amber-300 ring-amber-400/30',
+    red:    'bg-rose-500/15 text-rose-300 ring-rose-500/30',
+    cyan:   'bg-cyan/15 text-cyan ring-cyan/30',
+    gold:   'bg-gold/15 text-gold ring-gold/30',
+  };
+  return (
+    <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-[3px] text-[10.5px] font-bold uppercase tracking-wider ring-1 whitespace-nowrap ${tones[tone]} ${className}`}>
+      {children}
+    </span>
+  );
+}
+
+function RankBadge({ rank }) {
+  const m = { 1: ['#ffd24a', '#8a6b00'], 2: ['#cfd6e6', '#4a5266'], 3: ['#e08c4a', '#6b3d17'] }[rank];
+  if (!m) return <div className="w-8 text-center text-[13px] font-bold text-white/35 tnum">{rank}</div>;
+  return (
+    <div className="w-8 h-8 rounded-full grid place-items-center text-[12px] font-black text-pl-deep shrink-0"
+         style={{ background: `linear-gradient(150deg, ${m[0]}, ${m[1]})`, boxShadow: `0 3px 12px ${m[0]}33` }}>
+      {rank}
+    </div>
+  );
+}
+
+function SearchInput({ value, onChange, placeholder }) {
+  return (
+    <div className="relative">
+      <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-white/35 pointer-events-none">
+        <Icon name="search" size={17} />
+      </span>
+      <input
+        value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder}
+        type="search" inputMode="search" autoCorrect="off" autoCapitalize="off"
+        className="w-full glass rounded-xl pl-10 pr-10 py-3 text-[15px] placeholder:text-white/30 outline-none focus:ring-2 focus:ring-neon/40 transition"
+      />
+      {value && (
+        <button onClick={() => onChange('')} aria-label="Clear search"
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1.5 rounded-full text-white/45 active:bg-white/10">
+          <Icon name="x" size={15} />
+        </button>
+      )}
+    </div>
+  );
+}
+
+function SectionTitle({ children, right }) {
+  return (
+    <div className="flex items-end justify-between px-1 mb-2.5">
+      <h2 className="text-[11px] font-bold uppercase tracking-[.14em] text-white/40">{children}</h2>
+      {right}
+    </div>
+  );
+}
+
+function Skeleton({ rows = 6 }) {
+  return (
+    <div className="space-y-2.5">
+      {Array.from({ length: rows }).map((_, i) => <div key={i} className="skel h-16 w-full" />)}
+    </div>
+  );
+}
+
+function EmptyState({ icon = 'alert', title, body }) {
+  return (
+    <div className="text-center py-14 px-6 fade">
+      <div className="mx-auto w-14 h-14 rounded-2xl glass grid place-items-center text-white/35 mb-3.5">
+        <Icon name={icon} size={24} />
+      </div>
+      <p className="font-bold text-[15px]">{title}</p>
+      {body && <p className="text-[13px] text-white/45 mt-1.5 leading-relaxed max-w-xs mx-auto">{body}</p>}
+    </div>
+  );
+}
+
+/** iOS-style bottom sheet. Renders nothing when closed. */
+function BottomSheet({ open, onClose, title, subtitle, children }) {
+  useEffect(() => {
+    if (!open) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    const esc = (e) => e.key === 'Escape' && onClose();
+    window.addEventListener('keydown', esc);
+    return () => { document.body.style.overflow = prev; window.removeEventListener('keydown', esc); };
+  }, [open, onClose]);
+
+  if (!open) return null;
+  return (
+    <div className="fixed inset-0 z-50 flex flex-col justify-end">
+      <div className="absolute inset-0 bg-black/65 fade" onClick={onClose} />
+      <div className="relative sheet-up glass-strong rounded-t-3xl border-t border-white/12 max-h-[88vh] flex flex-col">
+        <div className="pt-2.5 pb-1 grid place-items-center shrink-0" onClick={onClose}>
+          <div className="w-10 h-1 rounded-full bg-white/25" />
+        </div>
+        <div className="px-5 pb-3 pt-1 flex items-start justify-between gap-3 shrink-0">
+          <div className="min-w-0">
+            <h3 className="text-[17px] font-extrabold leading-tight truncate">{title}</h3>
+            {subtitle && <p className="text-[12.5px] text-white/45 mt-0.5 truncate">{subtitle}</p>}
+          </div>
+          <button onClick={onClose} aria-label="Close"
+                  className="shrink-0 w-9 h-9 rounded-full bg-white/8 grid place-items-center text-white/60 press">
+            <Icon name="x" size={17} />
+          </button>
+        </div>
+        <div className="overflow-y-auto no-scrollbar px-4 pb-8 safe-b">{children}</div>
+      </div>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   7.  TAB 1 — LEADERBOARD
+   ─────────────────────────────────────────────────────────────────────
+   A single pill bar drives what "Points" means in the table below:
+     • Overall        → Total Overall Points (Live Leaderboard, Col E)
+     • Gameweek        → calculated live from Master Predictions + Live
+                         Results for whichever matchweek is picked
+     • MOTM: <month>   → that month's column (Cols F/G/H — Sep/Jan/Apr)
+   ═══════════════════════════════════════════════════════════════════════ */
+function LeaderboardTab({ data, onPlayer, currentGw }) {
+  const [q, setQ] = useState('');
+  const [mode, setMode] = useState('overall');   // 'overall' | 'gw' | 'motm:<key>'
+  const [gwSel, setGwSel] = useState(currentGw);
+
+  const monthCols = useMemo(() => motmMonths(data.monthCols), [data.monthCols]);
+  const playedSet = useMemo(
+    () => new Set(data.results.filter((r) => r.actualHome !== null).map((r) => r.gw)),
+    [data.results]
+  );
+
+  const filters = useMemo(() => ([
+    { key: 'overall', label: 'Overall' },
+    { key: 'gw',       label: 'Gameweek' },
+    ...monthCols.map((m) => ({ key: 'motm:' + m.key, label: 'MOTM: ' + m.label, month: m })),
+  ]), [monthCols]);
+  const activeFilter = filters.find((f) => f.key === mode) || filters[0];
+
+  /* Rows for whichever pill is active — always normalised to { player, points }. */
+  const rows = useMemo(() => {
+    if (mode === 'gw') return weeklyPointsTable(data, gwSel);
+    if (mode.startsWith('motm:')) {
+      const key = mode.slice(5);
+      return data.leaderboard
+        .map((r) => ({ player: r.player, points: (r.monthly || {})[key] || 0, motm: r.motm }))
+        .sort((a, b) => b.points - a.points || a.player.localeCompare(b.player));
+    }
+    return data.leaderboard
+      .map((r) => ({ player: r.player, points: r.total, motm: r.motm }))
+      .sort((a, b) => b.points - a.points || a.player.localeCompare(b.player));
+  }, [mode, gwSel, data]);
+
+  const ranked = useMemo(() => rows.map((r, i) => ({ ...r, rank: i + 1 })), [rows]);
+  const filtered = useMemo(() => {
+    const t = q.trim().toLowerCase();
+    return t ? ranked.filter((r) => r.player.toLowerCase().includes(t)) : ranked;
+  }, [ranked, q]);
+
+  const leader = ranked[0];
+
+  return (
+    <div className="space-y-4">
+      <div className="rise">
+        <SectionTitle>Leaderboard</SectionTitle>
+        <div className="flex gap-2 overflow-x-auto no-scrollbar -mx-1 px-1 pb-1">
+          {filters.map((f) => (
+            <button key={f.key} onClick={() => setMode(f.key)}
+                    className={'shrink-0 px-3.5 h-9 rounded-full text-[12.5px] font-bold press transition ' +
+                      (mode === f.key ? 'bg-neon text-pl-deep shadow-[0_5px_18px_rgba(0,255,135,.3)]' : 'glass text-white/60')}>
+              {f.label}
+            </button>
+          ))}
+        </div>
+        {mode === 'gw' && (
+          <div className="mt-2 -mx-1 px-1">
+            <GameweekPills gw={gwSel} setGw={setGwSel} playedSet={playedSet} />
+          </div>
+        )}
+        {monthCols.length === 0 && (
+          <p className="text-[11px] text-white/35 mt-2 px-1 leading-relaxed">
+            Add a {(CONFIG.MOTM.months || []).join(', ') || 'month'} column to the Live Leaderboard tab
+            to unlock the Manager of the Month pills.
+          </p>
+        )}
+      </div>
+
+      <Card className="p-3.5 flex items-center gap-3 rise" style={{ animationDelay: '.05s' }}>
+        <div className="w-10 h-10 rounded-xl bg-gold/15 grid place-items-center text-gold shrink-0">
+          <Icon name="crown" size={19} />
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="text-[10px] font-bold uppercase tracking-[.11em] text-white/40">
+            {activeFilter.label} Leader
+          </p>
+          <p className="text-[15px] font-extrabold truncate leading-snug">{leader ? leader.player : '—'}</p>
+        </div>
+        <p className="text-[19px] font-black text-neon tnum shrink-0">{leader ? leader.points : 0}</p>
+      </Card>
+
+      <div className="rise" style={{ animationDelay: '.08s' }}>
+        <SearchInput value={q} onChange={setQ} placeholder={`Search all ${ranked.length} players…`} />
+      </div>
+
+      <div className="rise" style={{ animationDelay: '.12s' }}>
+        <SectionTitle right={<span className="text-[11px] text-white/30 tnum">{filtered.length} shown</span>}>
+          {activeFilter.label}
+        </SectionTitle>
+
+        <div className="glass rounded-2xl overflow-hidden">
+          <div className="flex items-center gap-3 px-3.5 py-2 border-b border-white/8 text-[9.5px] font-bold uppercase tracking-[.12em] text-white/35">
+            <span className="w-8 text-center">Rank</span>
+            <span className="flex-1">Player Name</span>
+            <span className="text-right text-neon/70">Points</span>
+          </div>
+
+          {filtered.length === 0 ? (
+            <EmptyState icon="search" title="No player found" body={`Nothing matches “${q}”.`} />
+          ) : filtered.map((r) => (
+            <button key={r.player} onClick={() => onPlayer(r.player)}
+                    className="w-full flex items-center gap-3 px-3.5 py-2.5 border-b border-white/[.05] last:border-0 text-left press active:bg-white/[.06]">
+              <RankBadge rank={r.rank} />
+              <Avatar name={r.player} size={34} rank={r.rank} />
+              <div className="flex-1 min-w-0">
+                <p className="text-[14px] font-semibold truncate leading-tight">{r.player}</p>
+                {r.motm && (
+                  <span className="inline-flex items-center gap-1 mt-1 text-[9.5px] font-bold uppercase tracking-wider text-gold">
+                    <Icon name="trophy" size={10} /> MOTM · {r.motm}
+                  </span>
+                )}
+              </div>
+              <span className="text-[16px] font-extrabold text-neon tnum">{r.points}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <Card className="p-4 rise" style={{ animationDelay: '.16s' }}>
+        <SectionTitle>Scoring</SectionTitle>
+        <div className="space-y-1.5">
+          {CONFIG.POINTS_LEGEND.map((l) => (
+            <div key={l.label} className="flex justify-between text-[13px]">
+              <span className="text-white/55">{l.label}</span>
+              <span className="font-semibold text-white/85">{l.value}</span>
+            </div>
+          ))}
+        </div>
+        <p className="text-[11px] text-white/30 mt-3 leading-relaxed">
+          Match points (outcome, exact score, goalscorer) are calculated in-app from the rules above.
+          Overall and Manager of the Month totals are read directly from the Google Sheet.
+        </p>
+      </Card>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   8.  TAB 2 — GAMEWEEK PREDICTIONS
+   ═══════════════════════════════════════════════════════════════════════ */
+function GameweekPills({ gw, setGw, playedSet }) {
+  const scroller = useRef(null);
+  useEffect(() => {
+    const el = scroller.current?.querySelector(`[data-gw="${gw}"]`);
+    el?.scrollIntoView({ inline: 'center', block: 'nearest', behavior: 'smooth' });
+  }, [gw]);
+
+  return (
+    <div ref={scroller} className="flex gap-2 overflow-x-auto no-scrollbar -mx-4 px-4 py-1">
+      {Array.from({ length: 38 }, (_, i) => i + 1).map((n) => {
+        const active = n === gw;
+        return (
+          <button key={n} data-gw={n} onClick={() => setGw(n)}
+                  className={'shrink-0 min-w-[52px] h-11 px-3 rounded-xl text-[13px] font-bold press transition ' +
+                    (active ? 'bg-neon text-pl-deep shadow-[0_5px_18px_rgba(0,255,135,.3)]'
+                            : 'glass text-white/60')}>
+            <span className="block text-[8.5px] uppercase tracking-[.12em] opacity-60 leading-none mb-0.5">GW</span>
+            <span className="tnum leading-none">{n}</span>
+            {playedSet.has(n) && !active && <span className="block w-1 h-1 rounded-full bg-neon/70 mx-auto mt-1" />}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+/** One fixture, collapsed by default. Tapping it expands an inline accordion
+ *  panel listing every player's prediction and their calculated points —
+ *  no modal, per the "Match Cards Accordion" spec. */
+function MatchAccordionCard({ fx, preds, rememberedPlayer, open, onToggle, delay }) {
+  const played = fx.actualHome !== null;
+  const mine = preds.find((p) => p.player === rememberedPlayer);
+  const minePts = matchPoints(mine, fx);
+
+  const [q, setQ] = useState('');
+  const scored = useMemo(() => {
+    const t = q.trim().toLowerCase();
+    return preds
+      .filter((p) => !t || p.player.toLowerCase().includes(t))
+      .map((p) => ({ ...p, pts: matchPoints(p, fx) }))
+      .sort((a, b) => b.pts.total - a.pts.total || a.player.localeCompare(b.player));
+  }, [preds, q, fx]);
+
+  return (
+    <div className="glass rounded-2xl overflow-hidden rise" style={{ animationDelay: delay }}>
+      <button onClick={onToggle} aria-expanded={open}
+              className="w-full text-left p-3.5 press active:bg-white/[.04]">
+        <div className="flex items-center justify-between mb-2.5">
+          <span className="text-[10px] font-bold uppercase tracking-[.11em] text-white/35">
+            Fixture {fx.matchNo || ''}{fx.date ? ' · ' + fx.date : ''}
+          </span>
+          <span className="inline-flex items-center gap-1 text-[11px] font-bold text-white/45">
+            {preds.length} pick{preds.length === 1 ? '' : 's'}
+            <Icon name={open ? 'chevD' : 'chevR'} size={13} />
+          </span>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <span className={'flex-1 text-[14.5px] font-semibold text-right truncate ' + (fx.home ? '' : 'text-white/30')}>
+            {fx.home || 'TBC'}
+          </span>
+          <span className="px-3 py-1.5 rounded-lg font-black text-[17px] tnum shrink-0 ring-1 bg-white/8 ring-white/15">
+            {played ? `${fx.actualHome} – ${fx.actualAway}` : '– –'}
+          </span>
+          <span className={'flex-1 text-[14.5px] font-semibold truncate ' + (fx.away ? '' : 'text-white/30')}>
+            {fx.away || 'TBC'}
+          </span>
+        </div>
+
+        {played && fx.actualScorer && (
+          <p className="text-center text-[11px] text-white/35 mt-1.5">
+            <Icon name="ball" size={11} className="inline -mt-0.5 mr-1" />
+            {fx.actualScorer}{fx.actualScorerPosition ? ` (${fx.actualScorerPosition})` : ''}
+          </p>
+        )}
+        {!played && <p className="text-center text-[11px] text-white/35 mt-1.5">Awaiting result</p>}
+
+        {mine && (
+          <div className="flex items-center justify-between mt-3 pt-2.5 border-t border-white/[.07]">
+            <span className="text-[12px] text-white/50 truncate pr-2">
+              Your pick: {mine.predHome ?? '–'}–{mine.predAway ?? '–'}
+              {mine.predScorer ? ' · ' + mine.predScorer : ''}
+            </span>
+            {played && <span className="text-[13px] font-black text-neon tnum shrink-0">{minePts.total} pts</span>}
+          </div>
+        )}
+      </button>
+
+      {open && (
+        <div className="border-t border-white/[.08] p-3.5 pt-3 space-y-3 fade">
+          <SearchInput value={q} onChange={setQ} placeholder="Find a player…" />
+
+          {scored.length === 0 ? (
+            <EmptyState icon="alert" title="No predictions logged"
+                        body="Nothing in Master Predictions matches this fixture and gameweek." />
+          ) : (
+            <div className="rounded-xl overflow-hidden ring-1 ring-white/8">
+              {scored.map((r) => (
+                <div key={r.player}
+                     className={'flex items-center gap-3 px-3 py-2.5 border-b border-white/[.05] last:border-0 ' +
+                                (r.player === rememberedPlayer ? 'bg-cyan/[.10] ring-1 ring-inset ring-cyan/25'
+                                 : r.pts.exactHit ? 'bg-neon/[.08]' : '')}>
+                  <Avatar name={r.player} size={30} />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[13.5px] font-semibold truncate leading-tight">
+                      {r.player}
+                      {r.player === rememberedPlayer && <span className="text-cyan/70 font-bold text-[10px] ml-1.5">YOU</span>}
+                    </p>
+                    <p className={'text-[11.5px] truncate mt-0.5 inline-flex items-center gap-1 ' +
+                                  (r.pts.scorer > 0 ? 'text-neon font-semibold' : 'text-white/40')}>
+                      <Icon name="ball" size={11} /> {r.predScorer || '—'}
+                    </p>
+                  </div>
+                  <div className="text-right shrink-0">
+                    <p className={'font-black tnum text-[15px] ' + (r.pts.exactHit ? 'text-neon' : 'text-white/85')}>
+                      {r.predHome ?? '–'} – {r.predAway ?? '–'}
+                    </p>
+                    {played && <p className="text-[12px] font-bold text-neon tnum mt-0.5">{r.pts.total} pts</p>}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          <p className="text-[10.5px] text-white/30 leading-relaxed">
+            {CONFIG.SCORING.outcome} pts correct outcome · +{CONFIG.SCORING.exactBonus} exact score ·
+            goalscorer F {CONFIG.SCORING.scorerByPosition.F} / M {CONFIG.SCORING.scorerByPosition.M} /
+            D {CONFIG.SCORING.scorerByPosition.D} pts.
+          </p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+const PLAYER_KEY = 'pp2627:player';
+
+function GameweekTab({ data, currentGw }) {
+  const [gw, setGw] = useState(currentGw);
+  const [openMatchNo, setOpenMatchNo] = useState(null);
+
+  const players = useMemo(() => {
+    const set = new Set([...data.leaderboard.map((r) => r.player),
+                         ...data.predictions.map((p) => p.player)]);
+    return [...set].filter(Boolean).sort((a, b) => a.localeCompare(b));
+  }, [data.leaderboard, data.predictions]);
+
+  /* Remember whoever they looked at last — most people only check their own. */
+  const [player, setPlayer] = useState(() => {
+    try { return localStorage.getItem(PLAYER_KEY) || ''; } catch { return ''; }
+  });
+  useEffect(() => {
+    if (!players.length) return;
+    if (!player || !players.includes(player)) setPlayer(players[0]);
+  }, [players]);
+  const choosePlayer = (p) => {
+    setPlayer(p);
+    try { localStorage.setItem(PLAYER_KEY, p); } catch {}
+  };
+
+  const playedSet = useMemo(
+    () => new Set(data.results.filter((r) => r.actualHome !== null).map((r) => r.gw)),
+    [data.results]
+  );
+
+  const fixtures = useMemo(
+    () => data.results.filter((r) => r.gw === gw).sort((a, b) => (a.matchNo || 0) - (b.matchNo || 0)),
+    [data.results, gw]
+  );
+
+  /* Predictions are matched to fixtures on (Matchweek, Fixture Number) —
+     the wide sheet carries no team names, so position is the only key. */
+  const byFixture = useMemo(() => {
+    const m = new Map();
+    for (const p of data.predictions) {
+      if (p.gw !== gw) continue;
+      if (!m.has(p.fixture)) m.set(p.fixture, []);
+      m.get(p.fixture).push(p);
+    }
+    return m;
+  }, [data.predictions, gw]);
+
+  const predsFor = useCallback((fx) => byFixture.get(fx.matchNo) || [], [byFixture]);
+
+  const gwPredCount = useMemo(
+    () => new Set(data.predictions.filter((p) => p.gw === gw).map((p) => p.player)).size,
+    [data.predictions, gw]
+  );
+
+  /* This gameweek's total for whoever is remembered, calculated from the
+     same scoring rules as everywhere else in the app. */
+  const myTotal = useMemo(() => {
+    let sum = 0, anyPlayed = false;
+    for (const fx of fixtures) {
+      const mine = (byFixture.get(fx.matchNo) || []).find((p) => p.player === player);
+      const pts = matchPoints(mine, fx);
+      if (pts.played) anyPlayed = true;
+      sum += pts.total;
+    }
+    return { sum, anyPlayed };
+  }, [fixtures, byFixture, player]);
+
+  return (
+    <div className="space-y-4">
+      <div className="sticky top-0 -mx-4 px-4 pt-1 pb-2 z-20 glass-strong">
+        <GameweekPills gw={gw} setGw={setGw} playedSet={playedSet} />
+      </div>
+
+      <div className="flex items-center justify-between px-1">
+        <div>
+          <h2 className="text-[19px] font-extrabold leading-none">Matchweek {gw}</h2>
+          <p className="text-[12px] text-white/40 mt-1">
+            {fixtures.length} fixture{fixtures.length === 1 ? '' : 's'} · {gwPredCount} players submitted
+          </p>
+        </div>
+        {gw === currentGw && <Pill tone="green">Live</Pill>}
+      </div>
+
+      <Card className="p-3.5 rise flex items-center gap-3">
+        <div className="relative flex-1">
+          <select value={player} onChange={(e) => choosePlayer(e.target.value)}
+                  aria-label="Jump to a player's picks"
+                  className="w-full appearance-none bg-white/8 border border-white/12 rounded-xl px-4 py-3 pr-11 text-[14px] font-semibold outline-none focus:ring-2 focus:ring-neon/40">
+            {players.map((p) => <option key={p} value={p} className="bg-pl-deep">{p}</option>)}
+          </select>
+          <span className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-white/45">
+            <Icon name="chevD" size={16} />
+          </span>
+        </div>
+        {myTotal.anyPlayed && (
+          <div className="text-right shrink-0">
+            <p className="text-[9.5px] font-bold uppercase tracking-wider text-white/35">Your GW{gw}</p>
+            <p className="text-[17px] font-black text-neon tnum leading-none">{myTotal.sum} pts</p>
+          </div>
+        )}
+      </Card>
+
+      {fixtures.length === 0 ? (
+        <EmptyState icon="cal" title={`No fixtures for GW ${gw}`}
+                    body="Add rows for this matchweek to the Live Results tab and they will appear here." />
+      ) : (
+        <div className="space-y-2.5">
+          {fixtures.map((fx, i) => {
+            const key = fx.matchNo || i;
+            return (
+              <MatchAccordionCard key={gw + '-' + key} fx={fx} preds={predsFor(fx)}
+                                   rememberedPlayer={player} delay={i * 45 + 'ms'}
+                                   open={openMatchNo === key}
+                                   onToggle={() => setOpenMatchNo(openMatchNo === key ? null : key)} />
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   9.  TAB 3 — SEASON OUTRIGHTS
+   ═══════════════════════════════════════════════════════════════════════ */
+function OutrightsTab({ data, focusPlayer, clearFocus }) {
+  const players = useMemo(
+    () => [...new Set(data.outrights.map((o) => o.player))].sort((a, b) => a.localeCompare(b)),
+    [data.outrights]
+  );
+  const [sel, setSel] = useState(focusPlayer || players[0] || '');
+  useEffect(() => { if (focusPlayer) { setSel(focusPlayer); clearFocus(); } }, [focusPlayer]);
+
+  const slip = data.outrights.find((o) => o.player === sel);
+
+  /* Confirmed answers from the "ACTUAL RESULTS:" row above the headers.
+     Keys are the sheet's own header text, so match them by alias. */
+  const answers = useMemo(() => {
+    const src = data.outrightAnswers || {};
+    const out = {};
+    for (const c of OUTRIGHT_CATS) {
+      const aliases = (CONFIG.COLUMNS.outrights[c.key] || []).map(norm);
+      const hit = Object.keys(src).find((h) => aliases.some((a) => norm(h).startsWith(a)));
+      if (hit) out[c.key] = src[hit];
+    }
+    return out;
+  }, [data.outrightAnswers]);
+
+  const isCorrect = (key, pick) =>
+    !!answers[key] && !!pick && norm(pick) === norm(answers[key]);
+
+  const confirmedCount = Object.keys(answers).length;
+  const slipScore = slip
+    ? OUTRIGHT_CATS.filter((c) => isCorrect(c.key, slip[c.key])).length * CONFIG.SCORING.outrightBonus
+    : 0;
+
+  /** Most-backed pick per category, across the whole league. */
+  const consensus = useMemo(() => {
+    const out = {};
+    for (const c of OUTRIGHT_CATS) {
+      const counts = {};
+      for (const o of data.outrights) {
+        const v = txt(o[c.key]); if (!v) continue;
+        counts[v] = (counts[v] || 0) + 1;
+      }
+      const list = Object.entries(counts).sort((a, b) => b[1] - a[1]);
+      out[c.key] = { top: list.slice(0, 4), totalPicks: list.reduce((s, x) => s + x[1], 0) };
+    }
+    return out;
+  }, [data.outrights]);
+
+  return (
+    <div className="space-y-4">
+      <Card className="p-4 rise">
+        <SectionTitle>Player Slip</SectionTitle>
+        <div className="relative">
+          <select value={sel} onChange={(e) => setSel(e.target.value)}
+                  className="w-full appearance-none bg-white/8 border border-white/12 rounded-xl px-4 py-3.5 pr-11 text-[15px] font-semibold outline-none focus:ring-2 focus:ring-neon/40">
+            {players.map((p) => <option key={p} value={p} className="bg-pl-deep">{p}</option>)}
+          </select>
+          <span className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-white/45">
+            <Icon name="chevD" size={17} />
+          </span>
+        </div>
+
+        {slip ? (
+          <div className="mt-3.5 space-y-2">
+            {OUTRIGHT_CATS.map((c, i) => {
+              const hit = isCorrect(c.key, slip[c.key]);
+              const settled = !!answers[c.key];
+              return (
+                <div key={c.key} style={{ animationDelay: i * 40 + 'ms' }}
+                     className={`rise flex items-center gap-3 rounded-xl px-3.5 py-3 bg-gradient-to-r ${c.tone} ring-1 ` +
+                                (hit ? 'ring-neon/60 bg-neon/10' : c.ring)}>
+                  <Icon name={c.icon} size={18} className={hit ? 'text-neon shrink-0' : 'text-white/75 shrink-0'} />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[9.5px] font-bold uppercase tracking-[.12em] text-white/45">{c.label}</p>
+                    <p className="text-[15px] font-extrabold truncate leading-snug">{slip[c.key] || '— not submitted —'}</p>
+                    {settled && !hit && (
+                      <p className="text-[10.5px] text-white/40 truncate mt-0.5">Actual: {answers[c.key]}</p>
+                    )}
+                  </div>
+                  {hit
+                    ? <span className="shrink-0 text-neon"><Icon name="check" size={17} strokeWidth={3} /></span>
+                    : <span className="text-[10px] font-black text-white/40 shrink-0 tnum">{CONFIG.SCORING.outrightBonus}</span>}
+                </div>
+              );
+            })}
+            <div className="flex justify-between items-center pt-2.5 mt-1 border-t border-white/8">
+              <span className="text-[12px] text-white/45">
+                {confirmedCount > 0 ? `Confirmed so far (${confirmedCount}/5 settled)` : 'Maximum available'}
+              </span>
+              <span className="text-[16px] font-black text-neon tnum">
+                {confirmedCount > 0 ? slipScore : OUTRIGHT_CATS.length * CONFIG.SCORING.outrightBonus} pts
+              </span>
+            </div>
+          </div>
+        ) : (
+          <EmptyState icon="target" title="No slip found"
+                      body="This player has no row in the Tournament Predictions tab." />
+        )}
+      </Card>
+
+      <div className="rise" style={{ animationDelay: '.1s' }}>
+        <SectionTitle right={<span className="text-[11px] text-white/30">{data.outrights.length} slips</span>}>
+          League Consensus
+        </SectionTitle>
+        <div className="space-y-2.5">
+          {OUTRIGHT_CATS.map((c) => {
+            const d = consensus[c.key];
+            return (
+              <Card key={c.key} className="p-3.5">
+                <div className="flex items-center gap-2 mb-3">
+                  <Icon name={c.icon} size={15} className="text-neon" />
+                  <span className="text-[12.5px] font-bold">{c.label}</span>
+                  <span className="ml-auto text-[9.5px] font-bold uppercase tracking-wider text-white/30">{CONFIG.SCORING.outrightBonus} pts</span>
+                </div>
+                {d.top.length === 0 ? (
+                  <p className="text-[12px] text-white/35">No picks submitted yet.</p>
+                ) : d.top.map(([name, n]) => {
+                  const pct = d.totalPicks ? Math.round((n / d.totalPicks) * 100) : 0;
+                  return (
+                    <div key={name} className="mb-2 last:mb-0">
+                      <div className="flex justify-between text-[12.5px] mb-1">
+                        <span className="truncate pr-2 font-medium text-white/80">{name}</span>
+                        <span className="text-white/45 tnum shrink-0">{n} · {pct}%</span>
+                      </div>
+                      <div className="h-1.5 rounded-full bg-white/8 overflow-hidden">
+                        <div className="h-full rounded-full bg-gradient-to-r from-neon to-cyan transition-all duration-700"
+                             style={{ width: pct + '%' }} />
+                      </div>
+                    </div>
+                  );
+                })}
+              </Card>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   10.  TAB 4 — PAYMENT TRACKING
+   ═══════════════════════════════════════════════════════════════════════ */
+function paymentState(p) {
+  const paid = p.totalPaid;
+  if (paid >= CONFIG.FEE.total) return { key: 'full',    label: 'FULLY PAID',     tone: 'green',  owed: 0 };
+  if (paid > 0)                  return { key: 'partial', label: 'PARTIALLY PAID', tone: 'orange', owed: CONFIG.FEE.total - paid };
+  return                                { key: 'unpaid',  label: 'UNPAID',         tone: 'red',    owed: CONFIG.FEE.total };
+}
+
+function PaymentsTab({ data }) {
+  const [q, setQ] = useState('');
+  const [filter, setFilter] = useState('all');
+
+  const rows = useMemo(
+    () => data.payments.map((p) => ({ ...p, st: paymentState(p) })),
+    [data.payments]
+  );
+
+  const totals = useMemo(() => {
+    const collected = rows.reduce((s, r) => s + r.totalPaid, 0);
+    const expected = rows.length * CONFIG.FEE.total;
+    const counts = { full: 0, partial: 0, unpaid: 0 };
+    rows.forEach((r) => counts[r.st.key]++);
+    return { collected, expected, outstanding: Math.max(0, expected - collected), counts,
+             pct: expected ? Math.round((collected / expected) * 100) : 0 };
+  }, [rows]);
+
+  const filtered = useMemo(() => {
+    const t = q.trim().toLowerCase();
+    return rows
+      .filter((r) => filter === 'all' || r.st.key === filter)
+      .filter((r) => !t || r.player.toLowerCase().includes(t))
+      .sort((a, b) => a.totalPaid - b.totalPaid || a.player.localeCompare(b.player));
+  }, [rows, q, filter]);
+
+  const chips = [
+    { key: 'all',     label: 'All',       n: rows.length },
+    { key: 'full',    label: 'Paid',      n: totals.counts.full },
+    { key: 'partial', label: 'Partial',   n: totals.counts.partial },
+    { key: 'unpaid',  label: 'Unpaid',    n: totals.counts.unpaid },
+  ];
+
+  return (
+    <div className="space-y-4">
+      <Card className="p-4 rise">
+        <div className="flex items-start justify-between mb-3">
+          <div>
+            <p className="text-[10px] font-bold uppercase tracking-[.12em] text-white/40">Total Pool Collected</p>
+            <p className="text-[32px] font-black text-neon leading-none mt-1.5 tnum">{money(totals.collected)}</p>
+          </div>
+          <div className="text-right">
+            <p className="text-[10px] font-bold uppercase tracking-[.12em] text-white/40">Outstanding</p>
+            <p className="text-[20px] font-black text-amber-300 leading-none mt-1.5 tnum">{money(totals.outstanding)}</p>
+          </div>
+        </div>
+
+        <div className="h-2.5 rounded-full bg-white/8 overflow-hidden">
+          <div className="h-full rounded-full bg-gradient-to-r from-neon to-cyan transition-all duration-1000"
+               style={{ width: totals.pct + '%' }} />
+        </div>
+        <div className="flex justify-between text-[11.5px] text-white/40 mt-2 tnum">
+          <span>{totals.pct}% collected</span>
+          <span>Target {money(totals.expected)} · {rows.length} × {money(CONFIG.FEE.total)}</span>
+        </div>
+      </Card>
+
+      <div className="flex gap-2 overflow-x-auto no-scrollbar -mx-4 px-4 rise" style={{ animationDelay: '.05s' }}>
+        {chips.map((c) => (
+          <button key={c.key} onClick={() => setFilter(c.key)}
+                  className={'shrink-0 px-3.5 h-9 rounded-full text-[12.5px] font-bold press transition ' +
+                    (filter === c.key ? 'bg-neon text-pl-deep' : 'glass text-white/60')}>
+            {c.label} <span className="opacity-60 tnum">{c.n}</span>
+          </button>
+        ))}
+      </div>
+
+      <div className="rise" style={{ animationDelay: '.08s' }}>
+        <SearchInput value={q} onChange={setQ} placeholder="Search players…" />
+      </div>
+
+      <div className="rise" style={{ animationDelay: '.12s' }}>
+        <SectionTitle right={<span className="text-[11px] text-white/30 tnum">{filtered.length} shown</span>}>
+          Player Payments
+        </SectionTitle>
+
+        {filtered.length === 0 ? (
+          <EmptyState icon="card" title="Nothing to show" body="Try a different filter or search term." />
+        ) : (
+          <div className="glass rounded-2xl overflow-hidden">
+            {filtered.map((r) => (
+              <div key={r.player} className="flex items-center gap-3 px-3.5 py-3 border-b border-white/[.05] last:border-0">
+                <Avatar name={r.player} size={34} />
+                <div className="flex-1 min-w-0">
+                  <p className="text-[14px] font-semibold truncate leading-tight">{r.player}</p>
+                  <p className="text-[11.5px] text-white/40 mt-0.5 tnum">
+                    {money(r.totalPaid)} paid{r.st.owed > 0 ? ` · ${money(r.st.owed)} outstanding` : ''}
+                  </p>
+                </div>
+                <div className="flex flex-col items-end gap-1.5 shrink-0">
+                  <Pill tone={r.st.tone}>{r.st.label}</Pill>
+                  <div className="flex gap-1">
+                    <span className={'w-6 h-1.5 rounded-full ' + (r.p1 > 0 ? 'bg-neon' : 'bg-white/15')} title="1st payment" />
+                    <span className={'w-6 h-1.5 rounded-full ' + (r.p2 > 0 ? 'bg-neon' : 'bg-white/15')} title="2nd payment" />
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      <p className="text-[11px] text-white/30 px-1 leading-relaxed">
+        Status is derived from Total Paid against the {money(CONFIG.FEE.total)} entry fee
+        ({CONFIG.FEE.currency}{CONFIG.FEE.instalment} × 2). Edit <code className="text-white/45">CONFIG.FEE</code> if your fee differs.
+      </p>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   11.  DIAGNOSTICS  (⚙ in the header) — shows exactly what the sheet returned
+   ═══════════════════════════════════════════════════════════════════════ */
+/** Catches the month columns and Weekly Points Total drifting apart. */
+function MonthDriftCheck({ data }) {
+  const cols = data.monthCols || [];
+  /* Only meaningful when the month columns cover the whole season. With just
+     the three MOTM months they are not expected to add up to the total. */
+  if (!cols.length || !(CONFIG.MOTM && CONFIG.MOTM.reconcileWithTotal)) return null;
+
+  const off = data.leaderboard.filter((r) => Math.abs((r.monthSum || 0) - r.weekly) > 0.001);
+
+  if (!off.length) {
+    return (
+      <Card className="p-3.5 ring-1 ring-neon/25 bg-neon/8">
+        <p className="text-[12.5px] font-bold text-neon mb-0.5">Monthly totals reconcile</p>
+        <p className="text-[11.5px] text-white/55">
+          {cols.map((c) => c.header).join(', ')} sum to Weekly Points Total for all{' '}
+          {data.leaderboard.length} players.
+        </p>
+      </Card>
+    );
+  }
+  return (
+    <Card className="p-3.5 ring-1 ring-amber-400/35 bg-amber-400/10">
+      <p className="text-[12.5px] font-bold text-amber-200 mb-1">
+        {off.length} player{off.length === 1 ? '' : 's'} out of step
+      </p>
+      <p className="text-[11.5px] text-white/60 mb-2 leading-relaxed">
+        Their month columns do not add up to Weekly Points Total. Setting that cell to a
+        <code className="text-white/80"> =SUM()</code> of the month columns prevents this.
+      </p>
+      {off.slice(0, 6).map((r) => (
+        <p key={r.player} className="text-[11.5px] text-white/70 tnum">
+          {r.player}: months {r.monthSum} vs total {r.weekly}
+        </p>
+      ))}
+      {off.length > 6 && <p className="text-[11px] text-white/40 mt-1">…and {off.length - 6} more</p>}
+    </Card>
+  );
+}
+
+function Diagnostics({ data, error, onRefresh }) {
+  return (
+    <div className="space-y-3">
+      <Card className="p-3.5">
+        <div className="flex justify-between text-[12.5px] mb-1.5">
+          <span className="text-white/45">Mode</span>
+          <span className="font-semibold">{CONFIG.USE_MOCK ? 'Mock data' : 'Live Google Sheet'}</span>
+        </div>
+        <div className="flex justify-between text-[12.5px] mb-1.5">
+          <span className="text-white/45">Endpoint</span>
+          <span className="font-semibold truncate max-w-[55%] text-right">{CONFIG.API_URL || 'not set'}</span>
+        </div>
+        <div className="flex justify-between text-[12.5px]">
+          <span className="text-white/45">Fetched</span>
+          <span className="font-semibold">{new Date(data.meta.generatedAt).toLocaleString('en-GB')}</span>
+        </div>
+      </Card>
+
+      {error && (
+        <Card className="p-3.5 ring-1 ring-rose-500/30 bg-rose-500/10">
+          <p className="text-[12.5px] font-bold text-rose-300 mb-1">Last fetch failed</p>
+          <p className="text-[12px] text-white/60 break-words">{String(error)}</p>
+        </Card>
+      )}
+
+      <MonthDriftCheck data={data} />
+
+      {(data.warnings || []).length > 0 && (
+        <Card className="p-3.5 ring-1 ring-amber-400/30 bg-amber-400/10">
+          <p className="text-[12.5px] font-bold text-amber-200 mb-1">Sheet warnings</p>
+          {data.warnings.map((w, i) => (
+            <p key={i} className="text-[11.5px] text-white/70 break-words">{w}</p>
+          ))}
+        </Card>
+      )}
+
+      {(data.diagnostics || []).map((d) => (
+        <Card key={d.key} className="p-3.5">
+          <div className="flex items-center justify-between mb-2 gap-2">
+            <div className="min-w-0">
+              <p className="text-[13px] font-bold truncate">{d.tab}</p>
+              <p className="text-[10.5px] text-white/35 tnum">
+                {d.key}{d.headerRow ? ` · header row ${d.headerRow}` : ''} · {d.rowCount || 0} rows
+              </p>
+            </div>
+            {d.missing.length === 0
+              ? <Pill tone="green">All mapped</Pill>
+              : <Pill tone="orange">{d.missing.length} unmapped</Pill>}
+          </div>
+          {d.missing.length > 0 && (
+            <p className="text-[11.5px] text-amber-300 mb-2">
+              Could not find: <span className="font-semibold">{d.missing.join(', ')}</span> — add your real header
+              name to <code>CONFIG.COLUMNS.{d.key}</code>.
+            </p>
+          )}
+          <p className="text-[10px] font-bold uppercase tracking-[.11em] text-white/30 mb-1">Headers found</p>
+          <p className="text-[11.5px] text-white/55 break-words leading-relaxed">
+            {d.headers.length ? d.headers.join(' · ') : '(tab empty or not returned)'}
+          </p>
+        </Card>
+      ))}
+
+      <button onClick={onRefresh}
+              className="w-full py-3.5 rounded-xl bg-neon text-pl-deep font-bold text-[14px] press">
+        Force refresh
+      </button>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   12.  APP SHELL — header, bottom nav, routing
+   ═══════════════════════════════════════════════════════════════════════ */
+const TABS = [
+  { key: 'leaderboard', label: 'Leaderboard', icon: 'trophy' },
+  { key: 'gameweek',    label: 'Gameweeks',   icon: 'ball'   },
+  { key: 'outrights',   label: 'Outrights',   icon: 'target' },
+  { key: 'payments',    label: 'Payments',    icon: 'card'   },
+];
+
+function BottomNav({ tab, setTab }) {
+  return (
+    <nav className="fixed bottom-0 inset-x-0 z-40 glass-strong border-t border-white/10 safe-b">
+      <div className="max-w-lg mx-auto grid grid-cols-4">
+        {TABS.map((t) => {
+          const active = tab === t.key;
+          return (
+            <button key={t.key} onClick={() => setTab(t.key)} aria-current={active ? 'page' : undefined}
+                    className="relative flex flex-col items-center gap-1 py-2.5 press">
+              {active && <span className="absolute top-0 w-9 h-[3px] rounded-b-full bg-neon" />}
+              <span className={active ? 'text-neon' : 'text-white/40'}>
+                <Icon name={t.icon} size={21} strokeWidth={active ? 2.4 : 1.9} />
+              </span>
+              <span className={'text-[10px] font-bold tracking-tight ' + (active ? 'text-neon' : 'text-white/40')}>
+                {t.label}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+    </nav>
+  );
+}
+
+function App() {
+  const [data, setData] = useState(null);
+  const [error, setError] = useState(null);
+  const [busy, setBusy] = useState(false);
+  const [tab, setTab] = useState('leaderboard');
+  const [showDiag, setShowDiag] = useState(false);
+  const [focusPlayer, setFocusPlayer] = useState(null);
+
+  const refresh = useCallback(async (force) => {
+    setBusy(true);
+    try {
+      if (!force) {
+        const c = readCache();
+        if (c && !c.stale) { setData(c.data); setError(null); setBusy(false); return; }
+      }
+      const d = await loadData();
+      setData(d); writeCache(d); setError(null);
+    } catch (e) {
+      setError(e.message || String(e));
+      const c = readCache();
+      if (c) setData(c.data);            // fall back to whatever we last had
+      else setData(mockSheet());          // never leave the user staring at nothing
+    } finally { setBusy(false); }
+  }, []);
+
+  useEffect(() => { refresh(false); }, [refresh]);
+
+  const currentGw = useMemo(() => {
+    if (!data) return 1;
+    if (CONFIG.CURRENT_GAMEWEEK) return CONFIG.CURRENT_GAMEWEEK;
+    const played = data.results.filter((r) => r.actualHome !== null).map((r) => r.gw);
+    const maxPlayed = played.length ? Math.max(...played) : 0;
+    const scheduled = data.results.filter((r) => r.actualHome === null).map((r) => r.gw);
+    const nextUp = scheduled.length ? Math.min(...scheduled) : maxPlayed;
+    return Math.min(38, Math.max(1, nextUp || maxPlayed || 1));
+  }, [data]);
+
+  const openPlayerOutrights = (p) => { setFocusPlayer(p); setTab('outrights'); };
+
+  if (!data) {
+    return (
+      <div className="max-w-lg mx-auto px-4 pt-24">
+        <Skeleton rows={7} />
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-full max-w-lg mx-auto flex flex-col">
+      {/* ── Sticky header ─────────────────────────────────────────── */}
+      <header className="sticky top-0 z-30 glass-strong border-b border-white/10 safe-t">
+        <div className="flex items-center gap-3 px-4 h-14">
+          <div className="w-9 h-9 rounded-xl grid place-items-center shrink-0"
+               style={{ background: 'linear-gradient(140deg,#38003c,#150017)', boxShadow: '0 0 0 1px rgba(0,255,135,.35)' }}>
+            <Icon name="ball" size={19} className="text-neon" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <h1 className="text-[16px] font-black tracking-tight leading-none truncate">Prem Predictor</h1>
+            <p className="text-[10px] font-bold tracking-[.16em] text-neon/75 mt-1">26/27 SEASON</p>
+          </div>
+          <button onClick={() => refresh(true)} aria-label="Refresh data"
+                  className="w-9 h-9 rounded-full bg-white/8 grid place-items-center text-white/55 press">
+            <Icon name="refresh" size={16} className={busy ? 'animate-spin' : ''} />
+          </button>
+          <button onClick={() => setShowDiag(true)} aria-label="Diagnostics"
+                  className="w-9 h-9 rounded-full bg-white/8 grid place-items-center text-white/55 press">
+            <Icon name="gear" size={16} />
+          </button>
+        </div>
+
+        {(data.meta.mock || error) && (
+          <div className={'px-4 py-1.5 text-[10.5px] font-bold uppercase tracking-[.1em] flex items-center gap-1.5 ' +
+                          (error ? 'bg-rose-500/20 text-rose-200' : 'bg-amber-400/15 text-amber-200')}>
+            <Icon name="alert" size={12} />
+            {error ? 'Offline — showing last saved data' : 'Sample data — not real results'}
+          </div>
+        )}
+      </header>
+
+      {/* ── Scrollable content ────────────────────────────────────── */}
+      <main className="flex-1 px-4 pt-4 pb-28">
+        {tab === 'leaderboard' && <LeaderboardTab data={data} onPlayer={openPlayerOutrights} currentGw={currentGw} />}
+        {tab === 'gameweek'    && <GameweekTab key={currentGw} data={data} currentGw={currentGw} />}
+        {tab === 'outrights'   && <OutrightsTab data={data} focusPlayer={focusPlayer} clearFocus={() => setFocusPlayer(null)} />}
+        {tab === 'payments'    && <PaymentsTab data={data} />}
+      </main>
+
+      <BottomNav tab={tab} setTab={setTab} />
+
+      <BottomSheet open={showDiag} onClose={() => setShowDiag(false)}
+                   title="Diagnostics" subtitle="Sheet connection and column mapping">
+        <Diagnostics data={data} error={error} onRefresh={() => { setShowDiag(false); refresh(true); }} />
+      </BottomSheet>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+
+/* ── Service worker registration ─────────────────────────────────── */
+if ('serviceWorker' in navigator && location.protocol !== 'file:') {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js').catch(() => { /* offline support unavailable */ });
+  });
+}
+</script>
+</body>
+</html>
