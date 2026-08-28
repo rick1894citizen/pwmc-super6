@@ -4,6 +4,9 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no" />
 <title>Prem Predictor 26/27</title>
+<meta name="description" content="A mobile-first PWA for the Premier League predictor league reading Google Sheets via Apps Script." />
+<meta property="og:title" content="Prem Predictor 26/27" />
+<meta property="og:description" content="A mobile-first PWA for the Premier League predictor league reading Google Sheets via Apps Script." />
 
 <!-- ── PWA / standalone ─────────────────────────────────────────────── -->
 <link rel="manifest" href="./manifest.json" />
@@ -85,6 +88,100 @@
   .press { transition: transform .12s ease, background-color .15s ease; }
   .press:active { transform: scale(.975); }
   .tnum { font-variant-numeric: tabular-nums; }
+
+  /* ── Light Mode Custom Styles ─────────────────────────────────────── */
+  html.light { color-scheme: light; }
+  html.light body {
+    background: #f8fafc;
+    background-image:
+      radial-gradient(1100px 520px at 50% -10%, rgba(0,255,135,.10), transparent 62%),
+      radial-gradient(900px 460px at 100% 0%, rgba(4,245,255,.07), transparent 60%);
+    color: #0f172a;
+  }
+  html.light .glass {
+    background: rgba(255, 255, 255, 0.88);
+    border-color: #e2e8f0;
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.04), 0 1px 2px -1px rgba(0, 0, 0, 0.04);
+  }
+  html.light .glass-strong {
+    background: rgba(255, 255, 255, 0.92);
+    border-color: #e2e8f0;
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+  }
+  html.light .text-white { color: #0f172a !important; }
+  html.light .text-white\/90 { color: #0f172a !important; }
+  html.light .text-white\/85 { color: #1e293b !important; }
+  html.light .text-white\/80 { color: #334155 !important; }
+  html.light .text-white\/75 { color: #334155 !important; }
+  html.light .text-white\/70 { color: #475569 !important; }
+  html.light .text-white\/60 { color: #475569 !important; }
+  html.light .text-white\/55 { color: #64748b !important; }
+  html.light .text-white\/50 { color: #64748b !important; }
+  html.light .text-white\/45 { color: #64748b !important; }
+  html.light .text-white\/40 { color: #64748b !important; }
+  html.light .text-white\/35 { color: #94a3b8 !important; }
+  html.light .text-white\/30 { color: #94a3b8 !important; }
+  html.light .text-white\/25 { color: #cbd5e1 !important; }
+  html.light .text-white\/20 { color: #cbd5e1 !important; }
+  html.light .text-white\/15 { color: #e2e8f0 !important; }
+  html.light .text-white\/12 { color: #e2e8f0 !important; }
+  html.light .text-white\/8  { color: #f1f5f9 !important; }
+
+  html.light .bg-white\/8  { background-color: #f1f5f9 !important; }
+  html.light .bg-white\/10 { background-color: #e2e8f0 !important; }
+  html.light .bg-white\/12 { background-color: #e2e8f0 !important; }
+  html.light .bg-white\/15 { background-color: #cbd5e1 !important; }
+  html.light .bg-white\/25 { background-color: #94a3b8 !important; }
+  html.light .bg-white\/\[\.04\] { background-color: #f8fafc !important; }
+  html.light .bg-white\/\[\.05\] { background-color: #f1f5f9 !important; }
+  html.light .bg-white\/\[\.06\] { background-color: #e2e8f0 !important; }
+  html.light .bg-white\/\[\.07\] { background-color: #f1f5f9 !important; }
+  html.light .bg-white\/\[\.08\] { background-color: #f1f5f9 !important; }
+  html.light .bg-white\/\[\.10\] { background-color: #e2e8f0 !important; }
+
+  html.light .border-white\/8,
+  html.light .border-white\/10,
+  html.light .border-white\/12,
+  html.light .border-white\/15,
+  html.light .border-white\/\[\.05\],
+  html.light .border-white\/\[\.07\],
+  html.light .border-white\/\[\.08\],
+  html.light .border-white\/\[\.10\] {
+    border-color: #e2e8f0 !important;
+  }
+  html.light .ring-white\/8,
+  html.light .ring-white\/12,
+  html.light .ring-white\/15 {
+    --tw-ring-color: #e2e8f0 !important;
+  }
+
+  html.light .text-neon { color: #059669 !important; }
+  html.light .text-neon\/75 { color: #059669 !important; }
+  html.light .text-neon\/70 { color: #047857 !important; }
+  html.light .bg-neon { background-color: #00ff87 !important; }
+  html.light .bg-neon.text-pl-deep,
+  html.light .text-pl-deep { color: #1a001d !important; }
+  html.light .text-cyan { color: #0284c7 !important; }
+  html.light .text-cyan\/70 { color: #0369a1 !important; }
+  html.light .text-gold { color: #b45309 !important; }
+  html.light .text-amber-300,
+  html.light .text-amber-200 { color: #b45309 !important; }
+  html.light .skel {
+    background: linear-gradient(90deg, rgba(0,0,0,.04) 25%, rgba(0,0,0,.09) 37%, rgba(0,0,0,.04) 63%);
+    background-size: 200% 100%;
+  }
+  html.light input,
+  html.light textarea,
+  html.light select {
+    color: #0f172a !important;
+    background-color: #f8fafc;
+    border-color: #cbd5e1;
+  }
+  html.light select option {
+    background: #ffffff !important;
+    color: #0f172a !important;
+  }
 </style>
 
 <script crossorigin src="https://unpkg.com/react@18.3.1/umd/react.production.min.js"></script>
@@ -337,6 +434,44 @@ function motmMonths(monthCols) {
   if (!wanted.length) return monthCols || [];
   const set = new Set(wanted.map((w) => norm(w).slice(0, 3)));
   return (monthCols || []).filter((m) => set.has(norm(m.label).slice(0, 3)));
+}
+
+/**
+ * Assigns standard sports competition rank (1224 ranking):
+ * Players with identical points share the same rank (e.g. two 1st places get rank 1,
+ * next player gets rank 3; three 4th places get rank 4, next player gets rank 7).
+ * Returns array of objects with { ...item, rank, isTied, displayRank: isTied ? `=${rank}` : `${rank}` }
+ */
+function assignCompetitionRanks(sortedItems, getPoints = (item) => item.points) {
+  if (!sortedItems || !sortedItems.length) return [];
+
+  // Frequency count of each points value to detect ties
+  const pointCounts = new Map();
+  for (const item of sortedItems) {
+    const pts = getPoints(item);
+    pointCounts.set(pts, (pointCounts.get(pts) || 0) + 1);
+  }
+
+  const result = [];
+  let currentRank = 1;
+
+  for (let i = 0; i < sortedItems.length; i++) {
+    const item = sortedItems[i];
+    const pts = getPoints(item);
+    if (i > 0 && pts < getPoints(sortedItems[i - 1])) {
+      currentRank = i + 1;
+    }
+    const count = pointCounts.get(pts) || 1;
+    const isTied = count > 1;
+    const displayRank = isTied ? `=${currentRank}` : `${currentRank}`;
+    result.push({
+      ...item,
+      rank: currentRank,
+      isTied,
+      displayRank,
+    });
+  }
+  return result;
 }
 
 /* ── Scoring engine ─────────────────────────────────────────────────────
@@ -691,6 +826,8 @@ const P = {
   cal:    ['M8 2v4','M16 2v4','M3 10h18','M3 6a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z'],
   crown:  ['M11.562 3.266a.5.5 0 0 1 .876 0L15.39 8.87a1 1 0 0 0 1.516.294l3.4-2.842a.5.5 0 0 1 .806.53l-2.19 8.2A2 2 0 0 1 17 16.5H7a2 2 0 0 1-1.92-1.448l-2.19-8.2a.5.5 0 0 1 .806-.53l3.4 2.842A1 1 0 0 0 8.61 8.87z','M5 21h14'],
   trend:  ['M16 7h6v6','m22 7-8.5 8.5-5-5L2 17'],
+  sun:    ['M12 2v2','M12 20v2','m4.93 4.93 1.41 1.41','m17.66 17.66 1.41 1.41','M2 12h2','M20 12h2','m6.34 17.66-1.41 1.41','m19.07 4.93-1.41 1.41','M12 17a5 5 0 1 0 0-10 5 5 0 0 0 0 10Z'],
+  moon:   ['M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z'],
 };
 function Icon({ name, size = 20, className = '', strokeWidth = 2, fill = 'none' }) {
   const d = P[name] || P.alert;
@@ -740,13 +877,14 @@ function Pill({ children, tone = 'slate', className = '' }) {
   );
 }
 
-function RankBadge({ rank }) {
+function RankBadge({ rank, isTied, displayRank }) {
+  const text = displayRank || (isTied ? `=${rank}` : `${rank}`);
   const m = { 1: ['#ffd24a', '#8a6b00'], 2: ['#cfd6e6', '#4a5266'], 3: ['#e08c4a', '#6b3d17'] }[rank];
-  if (!m) return <div className="w-8 text-center text-[13px] font-bold text-white/35 tnum">{rank}</div>;
+  if (!m) return <div className="w-8 text-center text-[12.5px] font-bold text-white/40 tnum">{text}</div>;
   return (
-    <div className="w-8 h-8 rounded-full grid place-items-center text-[12px] font-black text-pl-deep shrink-0"
+    <div className="w-8 h-8 rounded-full grid place-items-center text-[11px] font-black text-pl-deep shrink-0 tracking-tight"
          style={{ background: `linear-gradient(150deg, ${m[0]}, ${m[1]})`, boxShadow: `0 3px 12px ${m[0]}33` }}>
-      {rank}
+      {text}
     </div>
   );
 }
@@ -877,12 +1015,13 @@ function LeaderboardTab({ data, onPlayer, currentGw }) {
       .sort((a, b) => b.points - a.points || a.player.localeCompare(b.player));
   }, [mode, gwSel, data]);
 
-  const ranked = useMemo(() => rows.map((r, i) => ({ ...r, rank: i + 1 })), [rows]);
+  const ranked = useMemo(() => assignCompetitionRanks(rows), [rows]);
   const filtered = useMemo(() => {
     const t = q.trim().toLowerCase();
     return t ? ranked.filter((r) => r.player.toLowerCase().includes(t)) : ranked;
   }, [ranked, q]);
 
+  const leaders = useMemo(() => ranked.filter((r) => r.rank === 1), [ranked]);
   const leader = ranked[0];
 
   return (
@@ -917,9 +1056,11 @@ function LeaderboardTab({ data, onPlayer, currentGw }) {
         </div>
         <div className="flex-1 min-w-0">
           <p className="text-[10px] font-bold uppercase tracking-[.11em] text-white/40">
-            {activeFilter.label} Leader
+            {activeFilter.label} {leaders.length > 1 ? `Joint Leaders (${leaders.length})` : 'Leader'}
           </p>
-          <p className="text-[15px] font-extrabold truncate leading-snug">{leader ? leader.player : '—'}</p>
+          <p className="text-[15px] font-extrabold truncate leading-snug">
+            {leaders.length > 0 ? leaders.map((l) => l.player).join(', ') : '—'}
+          </p>
         </div>
         <p className="text-[19px] font-black text-neon tnum shrink-0">{leader ? leader.points : 0}</p>
       </Card>
@@ -945,10 +1086,15 @@ function LeaderboardTab({ data, onPlayer, currentGw }) {
           ) : filtered.map((r) => (
             <button key={r.player} onClick={() => onPlayer(r.player)}
                     className="w-full flex items-center gap-3 px-3.5 py-2.5 border-b border-white/[.05] last:border-0 text-left press active:bg-white/[.06]">
-              <RankBadge rank={r.rank} />
+              <RankBadge rank={r.rank} isTied={r.isTied} displayRank={r.displayRank} />
               <Avatar name={r.player} size={34} rank={r.rank} />
               <div className="flex-1 min-w-0">
-                <p className="text-[14px] font-semibold truncate leading-tight">{r.player}</p>
+                <div className="flex items-center gap-1.5 min-w-0">
+                  <p className="text-[14px] font-semibold truncate leading-tight">{r.player}</p>
+                  {r.isTied && (
+                    <span className="text-[10px] font-semibold text-white/40 shrink-0 uppercase tracking-wider">(Tied)</span>
+                  )}
+                </div>
                 {r.motm && (
                   <span className="inline-flex items-center gap-1 mt-1 text-[9.5px] font-bold uppercase tracking-wider text-gold">
                     <Icon name="trophy" size={10} /> MOTM · {r.motm}
@@ -1009,6 +1155,125 @@ function GameweekPills({ gw, setGw, playedSet }) {
   );
 }
 
+/**
+ * Aggregated selection breakdown for a fixture:
+ * 1. 1X2 Outcome Breakdown: counts & percentages for Home Win, Draw, Away Win
+ * 2. Top 3 Scoreline Consensus: most popular exact scoreline predictions with Outrights style bar
+ */
+function FixtureConsensusSummary({ fx, preds }) {
+  const valid = useMemo(() => {
+    return (preds || []).filter(
+      (p) => p && p.predHome !== null && p.predAway !== null && !isNaN(p.predHome) && !isNaN(p.predAway)
+    );
+  }, [preds]);
+
+  const total = valid.length;
+
+  const outcomes = useMemo(() => {
+    let h = 0, d = 0, a = 0;
+    for (const p of valid) {
+      if (p.predHome > p.predAway) h++;
+      else if (p.predHome === p.predAway) d++;
+      else a++;
+    }
+    const hPct = total ? Math.round((h / total) * 100) : 0;
+    const dPct = total ? Math.round((d / total) * 100) : 0;
+    const aPct = total ? Math.round((a / total) * 100) : 0;
+    return { h, d, a, hPct, dPct, aPct };
+  }, [valid, total]);
+
+  const topScorelines = useMemo(() => {
+    if (!total) return [];
+    const counts = {};
+    for (const p of valid) {
+      let label = '';
+      if (p.predHome > p.predAway) {
+        label = `${fx.home || 'Home'} ${p.predHome}-${p.predAway}`;
+      } else if (p.predAway > p.predHome) {
+        label = `${fx.away || 'Away'} ${p.predAway}-${p.predHome}`;
+      } else {
+        label = `${p.predHome}-${p.predAway} Draw`;
+      }
+      counts[label] = (counts[label] || 0) + 1;
+    }
+    return Object.entries(counts)
+      .sort((x, y) => y[1] - x[1] || x[0].localeCompare(y[0]))
+      .slice(0, 3);
+  }, [valid, total, fx.home, fx.away]);
+
+  if (total === 0) return null;
+
+  return (
+    <div className="mt-2.5 pt-2.5 border-t border-white/[.07] space-y-2 text-left">
+      {/* 1. 1X2 Outcome Summary */}
+      <div>
+        <div className="flex items-center justify-between text-[9.5px] font-bold uppercase tracking-[.12em] text-white/40 mb-1">
+          <span>Outcome Breakdown</span>
+          <span className="tnum">{total} pick{total === 1 ? '' : 's'}</span>
+        </div>
+
+        <div className="grid grid-cols-3 gap-1.5 text-center">
+          <div className="rounded-lg py-1 px-1.5 bg-white/[.04] ring-1 ring-white/8">
+            <div className="text-[9.5px] font-bold text-neon truncate">H ({fx.home ? fx.home.slice(0, 3).toUpperCase() : 'Home'})</div>
+            <div className="text-[11.5px] font-extrabold tnum mt-0.5 text-white/90">
+              {outcomes.h} <span className="text-[9.5px] font-normal text-white/45">({outcomes.hPct}%)</span>
+            </div>
+          </div>
+          <div className="rounded-lg py-1 px-1.5 bg-white/[.04] ring-1 ring-white/8">
+            <div className="text-[9.5px] font-bold text-amber-300 truncate">Draw (D)</div>
+            <div className="text-[11.5px] font-extrabold tnum mt-0.5 text-white/90">
+              {outcomes.d} <span className="text-[9.5px] font-normal text-white/45">({outcomes.dPct}%)</span>
+            </div>
+          </div>
+          <div className="rounded-lg py-1 px-1.5 bg-white/[.04] ring-1 ring-white/8">
+            <div className="text-[9.5px] font-bold text-cyan truncate">A ({fx.away ? fx.away.slice(0, 3).toUpperCase() : 'Away'})</div>
+            <div className="text-[11.5px] font-extrabold tnum mt-0.5 text-white/90">
+              {outcomes.a} <span className="text-[9.5px] font-normal text-white/45">({outcomes.aPct}%)</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Proportional Segmented bar */}
+        <div className="h-1.5 rounded-full bg-white/8 overflow-hidden flex mt-1.5">
+          {outcomes.hPct > 0 && <div style={{ width: `${outcomes.hPct}%` }} className="h-full bg-neon" title={`Home: ${outcomes.hPct}%`} />}
+          {outcomes.dPct > 0 && <div style={{ width: `${outcomes.dPct}%` }} className="h-full bg-amber-400" title={`Draw: ${outcomes.dPct}%`} />}
+          {outcomes.aPct > 0 && <div style={{ width: `${outcomes.aPct}%` }} className="h-full bg-cyan" title={`Away: ${outcomes.aPct}%`} />}
+        </div>
+      </div>
+
+      {/* 2. Top 3 Scorelines (Outrights Consensus Style) */}
+      {topScorelines.length > 0 && (
+        <div className="pt-1">
+          <div className="flex items-center justify-between text-[9.5px] font-bold uppercase tracking-[.12em] text-white/40 mb-1.5">
+            <span>Top Scoreline Consensus</span>
+            <span className="text-[9px] font-normal lowercase opacity-70">top 3</span>
+          </div>
+
+          <div className="space-y-1.5">
+            {topScorelines.map(([scoreLabel, count]) => {
+              const pct = total ? Math.round((count / total) * 100) : 0;
+              return (
+                <div key={scoreLabel} className="mb-1.5 last:mb-0">
+                  <div className="flex justify-between text-[11.5px] mb-0.5">
+                    <span className="truncate pr-2 font-semibold text-white/85">{scoreLabel}</span>
+                    <span className="text-white/45 tnum shrink-0 text-[11px] font-medium">{count} · {pct}%</span>
+                  </div>
+                  <div className="h-1.5 rounded-full bg-white/8 overflow-hidden">
+                    <div
+                      className="h-full rounded-full bg-gradient-to-r from-neon to-cyan transition-all duration-700"
+                      style={{ width: `${pct}%` }}
+                    />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 /** One fixture, collapsed by default. Tapping it expands an inline accordion
  *  panel listing every player's prediction and their calculated points —
  *  no modal, per the "Match Cards Accordion" spec. */
@@ -1059,6 +1324,9 @@ function MatchAccordionCard({ fx, preds, rememberedPlayer, open, onToggle, delay
           </p>
         )}
         {!played && <p className="text-center text-[11px] text-white/35 mt-1.5">Awaiting result</p>}
+
+        {/* Feature 1: Outcome Breakdown & Top 3 Scoreline Consensus */}
+        <FixtureConsensusSummary fx={fx} preds={preds} />
 
         {mine && (
           <div className="flex items-center justify-between mt-3 pt-2.5 border-t border-white/[.07]">
@@ -1185,6 +1453,17 @@ function GameweekTab({ data, currentGw }) {
     return { sum, anyPlayed };
   }, [fixtures, byFixture, player]);
 
+  const overallRanked = useMemo(() => {
+    const sorted = data.leaderboard
+      .map((r) => ({ player: r.player, points: r.total }))
+      .sort((a, b) => b.points - a.points || a.player.localeCompare(b.player));
+    return assignCompetitionRanks(sorted);
+  }, [data.leaderboard]);
+
+  const myOverallRank = useMemo(() => {
+    return overallRanked.find((r) => r.player === player);
+  }, [overallRanked, player]);
+
   return (
     <div className="space-y-4">
       <div className="sticky top-0 -mx-4 px-4 pt-1 pb-2 z-20 glass-strong">
@@ -1205,12 +1484,17 @@ function GameweekTab({ data, currentGw }) {
         <div className="relative flex-1">
           <select value={player} onChange={(e) => choosePlayer(e.target.value)}
                   aria-label="Jump to a player's picks"
-                  className="w-full appearance-none bg-white/8 border border-white/12 rounded-xl px-4 py-3 pr-11 text-[14px] font-semibold outline-none focus:ring-2 focus:ring-neon/40">
+                  className="w-full appearance-none bg-white/8 border border-white/12 rounded-xl px-4 py-2.5 pr-11 text-[14px] font-semibold outline-none focus:ring-2 focus:ring-neon/40">
             {players.map((p) => <option key={p} value={p} className="bg-pl-deep">{p}</option>)}
           </select>
           <span className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-white/45">
             <Icon name="chevD" size={16} />
           </span>
+          {myOverallRank && (
+            <p className="text-[11px] text-white/45 mt-1.5 px-0.5">
+              Rank: <span className="font-extrabold text-neon">{myOverallRank.displayRank}</span>{myOverallRank.isTied ? ' (Tied)' : ''} · <span className="text-white/40 tnum">{myOverallRank.points} pts overall</span>
+            </p>
+          )}
         </div>
         {myTotal.anyPlayed && (
           <div className="text-right shrink-0">
@@ -1543,9 +1827,24 @@ function MonthDriftCheck({ data }) {
   );
 }
 
-function Diagnostics({ data, error, onRefresh }) {
+function Diagnostics({ data, error, onRefresh, theme, onToggleTheme }) {
   return (
     <div className="space-y-3">
+      {/* Theme Appearance Control */}
+      <Card className="p-3.5">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-[13px] font-bold">Appearance</p>
+            <p className="text-[11px] text-white/45 mt-0.5">Currently {theme === 'dark' ? 'Dark Mode' : 'Light Mode'}</p>
+          </div>
+          <button onClick={onToggleTheme}
+                  className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white/8 ring-1 ring-white/10 press text-[12.5px] font-bold text-white/90">
+            <Icon name={theme === 'dark' ? 'sun' : 'moon'} size={14} className="text-neon" />
+            <span>{theme === 'dark' ? 'Switch to Light' : 'Switch to Dark'}</span>
+          </button>
+        </div>
+      </Card>
+
       <Card className="p-3.5">
         <div className="flex justify-between text-[12.5px] mb-1.5">
           <span className="text-white/45">Mode</span>
@@ -1616,6 +1915,7 @@ function Diagnostics({ data, error, onRefresh }) {
 /* ═══════════════════════════════════════════════════════════════════════
    12.  APP SHELL — header, bottom nav, routing
    ═══════════════════════════════════════════════════════════════════════ */
+const THEME_KEY = 'pp2627:theme';
 const TABS = [
   { key: 'leaderboard', label: 'Leaderboard', icon: 'trophy' },
   { key: 'gameweek',    label: 'Gameweeks',   icon: 'ball'   },
@@ -1654,6 +1954,31 @@ function App() {
   const [tab, setTab] = useState('leaderboard');
   const [showDiag, setShowDiag] = useState(false);
   const [focusPlayer, setFocusPlayer] = useState(null);
+
+  /* Global light / dark theme state with persistent storage */
+  const [theme, setTheme] = useState(() => {
+    try { return localStorage.getItem(THEME_KEY) || 'dark'; } catch { return 'dark'; }
+  });
+
+  useEffect(() => {
+    const root = document.documentElement;
+    if (theme === 'light') {
+      root.classList.add('light');
+      root.classList.remove('dark');
+      const meta = document.querySelector('meta[name="theme-color"]');
+      if (meta) meta.setAttribute('content', '#f8fafc');
+    } else {
+      root.classList.add('dark');
+      root.classList.remove('light');
+      const meta = document.querySelector('meta[name="theme-color"]');
+      if (meta) meta.setAttribute('content', '#240028');
+    }
+    try { localStorage.setItem(THEME_KEY, theme); } catch {}
+  }, [theme]);
+
+  const toggleTheme = () => {
+    setTheme((prev) => (prev === 'dark' ? 'light' : 'dark'));
+  };
 
   const refresh = useCallback(async (force) => {
     setBusy(true);
@@ -1707,6 +2032,11 @@ function App() {
             <h1 className="text-[16px] font-black tracking-tight leading-none truncate">Prem Predictor</h1>
             <p className="text-[10px] font-bold tracking-[.16em] text-neon/75 mt-1">26/27 SEASON</p>
           </div>
+          <button onClick={toggleTheme} aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+                  title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+                  className="w-9 h-9 rounded-full bg-white/8 grid place-items-center text-white/55 press">
+            <Icon name={theme === 'dark' ? 'sun' : 'moon'} size={16} />
+          </button>
           <button onClick={() => refresh(true)} aria-label="Refresh data"
                   className="w-9 h-9 rounded-full bg-white/8 grid place-items-center text-white/55 press">
             <Icon name="refresh" size={16} className={busy ? 'animate-spin' : ''} />
@@ -1738,7 +2068,8 @@ function App() {
 
       <BottomSheet open={showDiag} onClose={() => setShowDiag(false)}
                    title="Diagnostics" subtitle="Sheet connection and column mapping">
-        <Diagnostics data={data} error={error} onRefresh={() => { setShowDiag(false); refresh(true); }} />
+        <Diagnostics data={data} error={error} onRefresh={() => { setShowDiag(false); refresh(true); }}
+                     theme={theme} onToggleTheme={toggleTheme} />
       </BottomSheet>
     </div>
   );
